@@ -27,7 +27,7 @@ class Log:
     def __init__(self, path: Path | None = None):
         self.f = open(path, "a", encoding="utf-8") if path else None
         self.where = ""                                  # いまの手順（警告の見出しに使う）
-        self.notes: dict[str, list[str]] = {}            # 手順 → 警告・[注記]（途中では出さず、最後にまとめて出す。260927 本人決定）
+        self.notes: dict[str, list[str]] = {}            # 手順 → 警告・[注記]（途中では出さず、最後にまとめて出す。260927 決定）
 
     def __call__(self, msg: str = "") -> None:
         if ("[注意]" in msg or "[注記]" in msg) and "[エラー]" not in msg:
@@ -56,7 +56,7 @@ class Log:
         self(title)
 
     def summary(self) -> list[str]:
-        """最後の「注記: N件」と一覧 (260927 本人指定)。
+        """最後の「注記: N件」と一覧 (260927 指定)。
         続く手順で注記がまったく同じなら 1 つにまとめ、見出しを「10 #4 PCoA PCo1×PCo2, PCoA 交差形式 PCo1〜4」とする。
         N = まとめたあとの見出しの数。"""
         blocks: list[list] = []                          # [[見出し, …], 注記の並び]
@@ -65,7 +65,7 @@ class Log:
                 blocks[-1][0].append(where)
             else:
                 blocks.append([[where], items])
-        lines = [f"注記: {len(blocks)}件"]                  # 「警告」でなく「注記」（260927 本人指示）
+        lines = [f"注記: {len(blocks)}件"]                  # 「警告」でなく「注記」（260927 指示）
         for heads, items in blocks:
             head = heads[0] or "(手順の前)"
             if len(heads) > 1 and all(re.match(r"^\d\d\. ", h or "") for h in heads):   # 手順の見出しが並ぶときは番号だけ（261015）
@@ -97,7 +97,7 @@ def _split_note(msg: str) -> list[str]:
     m = re.match(r"^(.*?)で見切れている可能性があります \(群名を短くしてください\): (.*)$", s)
     if m:
         items = [(name.strip(), float(mm)) for name, mm in re.findall(r"(.+?) \(約 ([\d.]+) mm\)(?:, )?", m.group(2))]
-        name, mm = max(items, key=lambda x: x[1])      # 数と一番長いものだけ（260928 本人決定・案 B）
+        name, mm = max(items, key=lambda x: x[1])      # 数と一番長いものだけ（260928 決定・案 B）
         return [f"{m.group(1)}で見切れている群: {len(items)}群 (最長 {name} 約 {mm:.1f} mm)"]
     return [s]
 
@@ -122,7 +122,7 @@ def run_plain(log: Log, cmd: list[str], timeout: int = 3600) -> None:
 
 def check_env(log: Log) -> None:
     """QIIME 2 の版と R_HOME を確かめる。合わなければ原因と対処を示して止める (B-2)。
-    261015 本人決定 (E4b): env の名前ではなく QIIME 2 の版 (QIIME_VERSION.x)で判定する (別名の env・コンテナでも動くように)。"""
+    261015 決定 (E4b): env の名前ではなく QIIME 2 の版 (QIIME_VERSION.x)で判定する (別名の env・コンテナでも動くように)。"""
     import importlib.metadata as md
     lines = []
     try:
@@ -183,7 +183,7 @@ def env_label() -> str:
 
 
 def pipeline_label() -> str:
-    """開始の枠に出すパイプラインの版と実行した場所 (261102 本人決定・案 1)。
+    """開始の枠に出すパイプラインの版と実行した場所 (261102 決定・案 1)。
     VERSION が無くても止めない。更新のたびに図の版が増えないよう、図の版の判定 (VERSION_KEYS) には入れない。"""
     root = Path(__file__).resolve().parent.parent
     try:
@@ -194,7 +194,7 @@ def pipeline_label() -> str:
 
 
 def lib_versions() -> str:
-    """作図で使うライブラリの版 (開始の枠に 1 行。261021 本人決定・F202/F206 案 b)。"""
+    """作図で使うライブラリの版 (開始の枠に 1 行。261021 決定・F202/F206 案 b)。"""
     import subprocess
     import matplotlib
     import numpy
@@ -214,7 +214,7 @@ def lib_versions() -> str:
 
 
 def save_env_list(path: Path) -> str | None:
-    """env の全パッケージの一覧 (conda list --explicit) をファイルに残す (261021 本人決定・F202/F206 案 b)。
+    """env の全パッケージの一覧 (conda list --explicit) をファイルに残す (261021 決定・F202/F206 案 b)。
     同じ種類の機械なら conda create --name <env> --file <このファイル> で同じ env を作り直せる。
     残せなかったときは理由を返す。"""
     import os
@@ -233,7 +233,7 @@ def save_env_list(path: Path) -> str | None:
 
 
 def _log_cmd(log: Log, cmd: list[str]) -> None:
-    """コマンドを「$ qiime <サブコマンド>」＋ オプションごとに 1 行 (字下げ 2)で書き、最後に空行 (260925 本人指定)。"""
+    """コマンドを「$ qiime <サブコマンド>」＋ オプションごとに 1 行 (字下げ 2)で書き、最後に空行 (260925 指定)。"""
     head, rest = [], list(cmd)
     while rest and not rest[0].startswith("--"):
         head.append(rest.pop(0))
@@ -349,7 +349,7 @@ def export_qzv(log: Log, step: str, n: int, total: int, name: str,
     if not force and out_dir.is_dir() and (out_dir / "index.html").exists():
         log.step(step, n, total, True, name, f"既存) {out_dir.name}")
         return False
-    log.step(step, n, total, False, name, out_dir.name)      # 既存のときと同じくフォルダ名を出す（260925 本人指示）
+    log.step(step, n, total, False, name, out_dir.name)      # 既存のときと同じくフォルダ名を出す（260925 指示）
     return run(log, step, n, total, name, [out_dir / "index.html"], [
         "tools", "export", "--input-path", str(qzv), "--output-path", str(out_dir),
     ], force=True, quiet_head=True)

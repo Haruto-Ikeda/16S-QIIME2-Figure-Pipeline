@@ -10,7 +10,7 @@
   sample-metadata.txt     1 列目 #SampleID = FASTQ の ID。Run・Project・SampleSheet の列・群・newID (右端)
   sample-metadata_cn.txt  1 列目 #SampleID = newID (検体名)。ほかは上と同じ並び (Sample_name・newID を除く)
   sample_information.csv  解析した検体の検体情報 CSV の全列 (左は上と同じ列・No.)。10 がリード数を足して 00_info/ に写す
-                          (CSV を読むのは 01 の 1 回だけにして、図と表の食い違いを防ぐ。261024 本人決定・案 B)
+                          (CSV を読むのは 01 の 1 回だけにして、図と表の食い違いを防ぐ。261024 決定・案 B)
   行は ID の順 (M → P → N)
 
 CSV の読み取り仕様はコードに固定する (config に書かない)。形が変わったら黙って追随せず、止めて気づけるようにするため。
@@ -23,14 +23,14 @@ from pathlib import Path
 import pandas as pd
 
 # ---- CSV の固定仕様（config に出さない。変わったら止める）----
-CSV_HEADER_ROW = 7          # 1 始まり（260925 に 6 → 7: 本人が修正した CSV が正本。6 行目は空行）
-CSV_PROJECT_ROW = 2         # 2 行目 = 「Project No.,<番号>」(261021 本人決定・3-4。ファイル名の番号と照らし合わせる)
+CSV_HEADER_ROW = 7          # 1 始まり（260925 に 6 → 7: 修正した CSV が正本。6 行目は空行）
+CSV_PROJECT_ROW = 2         # 2 行目 = 「Project No.,<番号>」(261021 決定・3-4。ファイル名の番号と照らし合わせる)
 COL_NO = "No."
 COL_NAME = "Sample_name"
 COL_GROUP = "Group_name"
 COL_SUBGROUP = "Subgroup_name"
 
-ID_RE = re.compile(r"^M(\d{4})P(\d{4})N(\d{4})$")   # 検体の ID (261021 本人決定・②)
+ID_RE = re.compile(r"^M(\d{4})P(\d{4})N(\d{4})$")   # 検体の ID (261021 決定・②)
 
 # ---- QIIME 2 の識別子ルール ----
 ALLOWED = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.-_:|")
@@ -40,7 +40,7 @@ RESERVED_CI = {"id", "sampleid", "sample id", "sample-id",
 RESERVED_CS = {"#SampleID", "#Sample ID", "#OTUID", "#OTU ID", "sample_name"}
 # QIIME 2 が数として読む名前 (qiime2.Metadata.load で 36 通りを照らした。float() は nan・inf・1_000 でずれるので使わない。261102)
 NUMERIC_RE = re.compile(r"[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?")
-UTF8_SHOW_MAX = 5           # UTF-8 でない行を、エラーに最大何行出すか (261102 本人決定・案 2)
+UTF8_SHOW_MAX = 5           # UTF-8 でない行を、エラーに最大何行出すか (261102 決定・案 2)
 UTF8_SHOW_WIDTH = 30        # [ここ] の前後に何文字出すか
 
 
@@ -53,12 +53,12 @@ def _die(msg: str) -> None:
 
 
 def _at(p: Path) -> str:
-    """場所の示し方: ラン名/ファイル (例 250101_M0001/SampleSheet.txt)。無いものを指すときだけ絶対パスを使う (261023 本人決定・案 a)。"""
+    """場所の示し方: ラン名/ファイル (例 250101_M0001/SampleSheet.txt)。無いものを指すときだけ絶対パスを使う (261023 決定・案 a)。"""
     return f"{p.parent.name}/{p.name}"
 
 
 def _list(items) -> str:
-    """値を「a, b, c」と並べる (リストの [ ] や ' ' を出さない。261023 本人決定)。"""
+    """値を「a, b, c」と並べる (リストの [ ] や ' ' を出さない。261023 決定)。"""
     return ", ".join(str(x) for x in items)
 
 
@@ -67,7 +67,7 @@ def _lines(items) -> str:
 
 
 def _not_utf8_where(path: Path) -> str:
-    """UTF-8 でない文字のある行を、行番号と前後の文字で示す (最大 UTF8_SHOW_MAX 行と合計の行数。261102 本人決定・案 2)。
+    """UTF-8 でない文字のある行を、行番号と前後の文字で示す (最大 UTF8_SHOW_MAX 行と合計の行数。261102 決定・案 2)。
     行番号はファイルの行で数える (セルの中の改行があると Excel の行番号とずれる)。"""
     found: list[str] = []
     for no, raw in enumerate(re.split(rb"\r\n|\r|\n", path.read_bytes().removeprefix(b"\xef\xbb\xbf")), 1):
@@ -109,7 +109,7 @@ def fastq_ids(fastq_dir: Path) -> dict[str, dict[str, Path]]:
 # ---------------------------------------------------------------- SampleSheet
 def read_sample_sheet(path: Path) -> pd.DataFrame:
     """ランの検体表を文字のまま読む。同じ #SampleID が 2 行あれば、使わない行 (相乗りしたほかの方の検体) でも止める
-    (261021 本人決定・④-2・点検 F209。261023 に「使う行だけ」も検討したが、シートの壊れに気づけるよう全行のまま)。"""
+    (261021 決定・④-2・点検 F209。261023 に「使う行だけ」も検討したが、シートの壊れに気づけるよう全行のまま)。"""
     try:
         ss = pd.read_csv(path, sep="\t", dtype=str, keep_default_na=False, encoding="utf-8-sig")
     except UnicodeDecodeError:                                    # 261102: 場所を出す (A2)
@@ -140,7 +140,7 @@ def _read_csv(path: Path, **kw) -> pd.DataFrame:
 
 
 def read_sample_info(path: Path, pnum: int, log) -> pd.DataFrame:
-    """検体情報 CSV を固定仕様で読む。2 行目の Project No. がファイル名の番号と違えば止める (261021 本人決定・3-4)。
+    """検体情報 CSV を固定仕様で読む。2 行目の Project No. がファイル名の番号と違えば止める (261021 決定・3-4)。
     すべて文字のまま読み (点検 F008・F211)、No. の重複・整数でない No.・空欄の名前は止める (点検 F210・F223・F211)。"""
     head = _read_csv(path, header=None, nrows=CSV_PROJECT_ROW)
     row = [str(x).strip() for x in head.iloc[CSV_PROJECT_ROW - 1].tolist()]
@@ -193,7 +193,7 @@ def validate(df: pd.DataFrame, columns: list[str], log, id_col: str = "#SampleID
     if hits:
         bad.append(f"{COL_NAME}: QIIME 2 の予約語です: {_list(hits)}")
     # 全部が数だと 04 の feature-table group が受け付けない。混在は 04 を通るが、数の名前だけが残ると作図で名前が合わなくなる
-    # (pandas が 727 を数に読む)。1 つでも数なら止める (261102 本人決定・案 2)
+    # (pandas が 727 を数に読む)。1 つでも数なら止める (261102 決定・案 2)
     hits = sorted(v for v in df[COL_NAME] if NUMERIC_RE.fullmatch(v))
     if hits:
         bad.append(f"{COL_NAME}: 数として読める検体名があります: {_list(hits)} (数字以外の文字を 1 文字以上入れてください。例 _727・M727)")
@@ -218,10 +218,10 @@ def warn_whitespace(raw: pd.DataFrame, columns: list[str], log) -> None:
 
 # ---------------------------------------------------------------- 生成
 def build(runs: list[dict], infos: dict[int, dict], log) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """ラン・SampleSheet・検体情報 CSV を突き合わせて (変更前, 変更後) の metadata を返す (261021〜22 本人決定・①〜⑥)。
+    """ラン・SampleSheet・検体情報 CSV を突き合わせて (変更前, 変更後) の metadata を返す (261021〜22 決定・①〜⑥)。
     runs = steps.runs_of(cfg)、infos = steps.sample_info_of(cfg) ({P 番号: {path, absent_ok}})。"""
     log("-" * 65)
-    # 検体情報 CSV を先に読む (exclude・absent_ok の検体名をログに出すため。261022 本人決定)
+    # 検体情報 CSV を先に読む (exclude・absent_ok の検体名をログに出すため。261022 決定)
     info = pd.concat([read_sample_info(v["path"], p, log) for p, v in sorted(infos.items())], ignore_index=True)
     info["_P"] = info["Project"].str[1:].astype(int)
 
@@ -229,7 +229,7 @@ def build(runs: list[dict], infos: dict[int, dict], log) -> tuple[pd.DataFrame, 
         hit = info.loc[(info["_P"] == p) & (info[COL_NO] == n), COL_NAME]
         return hit.iloc[0] if len(hit) else "(検体情報 CSV に無い検体)"
 
-    runs = sorted(runs, key=lambda r: r["m"])                   # ランは M の順 (ログも表の ID の順とそろえる。261023 本人決定)
+    runs = sorted(runs, key=lambda r: r["m"])                   # ランは M の順 (ログも表の ID の順とそろえる。261023 決定)
     rows, seen_fastq = [], []                                    # seen_fastq = FASTQ がある (P, N) (exclude で外したものも含む)
     for r in runs:
         ids = fastq_ids(r["fastq"])
@@ -253,7 +253,7 @@ def build(runs: list[dict], infos: dict[int, dict], log) -> tuple[pd.DataFrame, 
         rows.append(sel)
         log(f"{r['name']}: FASTQ {sum(len(v) for v in ids.values())} ファイル (検体 {len(ids)} 件)"
             f"・SampleSheet {len(ss)} 行のうち {len(sel)} 行を使う")
-        if r["exclude"]:                                         # ID と検体名を 1 行ずつ (261022 本人決定)
+        if r["exclude"]:                                         # ID と検体名を 1 行ずつ (261022 決定)
             log(f"  exclude {len(r['exclude'])} 件:")
             for x in sorted(r["exclude"]):
                 p, n = (int(v) for v in ID_RE.fullmatch(x).groups()[1:])
@@ -274,7 +274,7 @@ def build(runs: list[dict], infos: dict[int, dict], log) -> tuple[pd.DataFrame, 
     noinfo = sorted(set(m["_P"]) - set(infos))
     if noinfo:
         _die("FASTQ の P 番号に当たる検体情報 CSV が config の sample_info: にありません: " + ", ".join(f"P{p:04d}" for p in noinfo))
-    # ログ: CSV ごとの absent_ok を、No. と検体名で 1 行ずつ (261022 本人決定)
+    # ログ: CSV ごとの absent_ok を、No. と検体名で 1 行ずつ (261022 決定)
     for p, v in sorted(infos.items()):
         log(f"検体情報 CSV (P{p:04d}): {v['path'].name}・{int((info['_P'] == p).sum())} 行")
         if v["absent_ok"]:
@@ -320,9 +320,9 @@ def build(runs: list[dict], infos: dict[int, dict], log) -> tuple[pd.DataFrame, 
     # 変更前: #SampleID・Run・Project・SampleSheet の列・群・newID (右端)
     before = m.drop(columns=["_P", "_N", COL_NO]).copy()
     before["newID"] = m[COL_NAME]
-    # 変更後: 1 列目が newID。ほかは変更前と同じ並び (Sample_name・newID は 1 列目と同じなので外す。261022 本人決定・案 a)
+    # 変更後: 1 列目が newID。ほかは変更前と同じ並び (Sample_name・newID は 1 列目と同じなので外す。261022 決定・案 a)
     after = before.drop(columns=[COL_NAME, "newID"]).assign(**{"#SampleID": before["newID"]})
-    # 検体情報: 変更前の列 (newID を除く・Sample_name の前に No.) ＋ CSV の残りの列。解析した検体だけ・ID の順 (261024 本人決定)
+    # 検体情報: 変更前の列 (newID を除く・Sample_name の前に No.) ＋ CSV の残りの列。解析した検体だけ・ID の順 (261024 決定)
     left = [c for c in before.columns if c != "newID"]
     left.insert(left.index(COL_NAME), COL_NO)
     rest = [c for c in info.columns if c not in left and c not in ("_P", "Project")]

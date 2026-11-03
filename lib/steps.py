@@ -27,9 +27,9 @@ def threads_arg(cfg: dict, style: str) -> str:
     return str(t)
 
 
-RUN_DIR_RE = re.compile(r"^\d{6}_(M\d{4})$")          # ランのフォルダ名 <YYMMDD>_M<4 桁> (261021 本人決定・1-2)
-ID_RE = re.compile(r"^M(\d{4})P(\d{4})N(\d{4})$")      # 検体の ID (261021 本人決定・②)
-N_RE = re.compile(r"^N(\d{4})$")                        # absent_ok の書き方 (その CSV の中の No.。261022 本人決定で各 CSV の中へ)
+RUN_DIR_RE = re.compile(r"^\d{6}_(M\d{4})$")          # ランのフォルダ名 <YYMMDD>_M<4 桁> (261021 決定・1-2)
+ID_RE = re.compile(r"^M(\d{4})P(\d{4})N(\d{4})$")      # 検体の ID (261021 決定・②)
+N_RE = re.compile(r"^N(\d{4})$")                        # absent_ok の書き方 (その CSV の中の No.。261022 決定で各 CSV の中へ)
 CSV_NAME_RE = re.compile(r"^\d{6}_(\d{4})_.+\.csv$")   # 検体情報 CSV のファイル名 <YYMMDD>_<P 4 桁>_…csv (3-4)
 RUN_KEYS = ("threads", "runs", "sample_info", "diversity", "classifier", "taxonomy")   # 解析し直しの形 (ア) だけで使うキー (絞り込みでは none)
 
@@ -39,7 +39,7 @@ def _die(msg: str) -> None:
 
 
 def abs_path(raw, key: str) -> Path:
-    """config のパス。~ で始まるパスか絶対パスだけ受け付け、相対パスは止める (261021 本人決定・ウ 案 A)。"""
+    """config のパス。~ で始まるパスか絶対パスだけ受け付け、相対パスは止める (261021 決定・ウ 案 A)。"""
     if not isinstance(raw, str) or not raw.strip():
         _die(f"config の {key} はパスで書いてください (現在: {raw!r})")
     p = Path(raw.strip()).expanduser()
@@ -53,7 +53,7 @@ def is_none(v) -> bool:
 
 
 def mode(cfg: dict) -> str:
-    """config の形 (261021 本人決定・7-1。261022 に雛形を 1 つにまとめた)。
+    """config の形 (261021 決定・7-1。261022 に雛形を 1 つにまとめた)。
     runs: と parent: はどちらも必須で、使わない方は none と書く。runs: = 解析し直し (ア。01〜10)、parent: = 絞り込み (イ。10 だけ)。"""
     for k in ("runs", "parent", "select"):
         if k not in cfg:
@@ -66,16 +66,16 @@ def mode(cfg: dict) -> str:
 
 
 def classifier_path(cfg: dict) -> Path:
-    """分類器のパス (261015 本人決定・E4a)。~ で始まるパスか絶対パスだけ受け付け、相対パスは止める。"""
+    """分類器のパス (261015 決定・E4a)。~ で始まるパスか絶対パスだけ受け付け、相対パスは止める。"""
     p = abs_path((cfg.get("classifier") or {}).get("path"), "classifier.path")
     if not p.exists():                     # 01 の前に止める (261021・C7。以前は 01〜07 のあとの 08 で初めて確かめていた)
-        guide = Path(__file__).resolve().parent.parent / "MANUAL.md"   # パイプラインの置き場所から計算 (261019 本人決定・移植性。261027 に手引きの §2 へ)
+        guide = Path(__file__).resolve().parent.parent / "MANUAL.md"   # パイプラインの置き場所から計算 (261019 決定・移植性。261027 に手引きの §2 へ)
         raise SystemExit(f"  [エラー] 分類器がありません: {p}\n  ※ {guide} の「2. 分類器」を見て、置き場所と config の classifier.path を確かめてください")
     return p
 
 
 def rarefaction_seed(cfg: dict) -> int:
-    """希薄化 (07 core-metrics)の乱数の種 (261009 本人決定・D11a)。config に明示が無ければ止める。"""
+    """希薄化 (07 core-metrics)の乱数の種 (261009 決定・D11a)。config に明示が無ければ止める。"""
     seed = (cfg.get("diversity") or {}).get("random_seed")
     if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
         raise SystemExit(f"  [エラー] config の diversity.random_seed を 0 以上の整数で書いてください (現在: {seed!r})")
@@ -97,7 +97,7 @@ def _none_or_list(v, key: str, pat: re.Pattern, form: str) -> list[str]:
 
 
 def runs_of(cfg: dict) -> list[dict]:
-    """config の runs: を確かめ、[{name, m, path, fastq, sheet, qc, exclude}] を返す (261021 本人決定・①⑥)。"""
+    """config の runs: を確かめ、[{name, m, path, fastq, sheet, qc, exclude}] を返す (261021 決定・①⑥)。"""
     runs = cfg.get("runs")
     if not isinstance(runs, list) or not runs:
         _die(f"config の runs: は使うランのリスト (1 つ以上) で書いてください (現在: {runs!r})")
@@ -135,8 +135,8 @@ def runs_of(cfg: dict) -> list[dict]:
 
 
 def sample_info_of(cfg: dict) -> dict[int, dict]:
-    """config の sample_info: (CSV のリスト) を確かめ、{P 番号: {path, absent_ok (No. の集合)}} を返す (261021 本人決定・③)。
-    各 CSV に path と absent_ok (その CSV の検体のうち FASTQ が無くてよい No.。N0127 の形か none) を書く (261022 本人決定)。
+    """config の sample_info: (CSV のリスト) を確かめ、{P 番号: {path, absent_ok (No. の集合)}} を返す (261021 決定・③)。
+    各 CSV に path と absent_ok (その CSV の検体のうち FASTQ が無くてよい No.。N0127 の形か none) を書く (261022 決定)。
     中身の照合 (2 行目の Project No.・No. の重複など) は 01 で行う。"""
     v = cfg.get("sample_info")
     if isinstance(v, dict):
@@ -163,7 +163,7 @@ def sample_info_of(cfg: dict) -> dict[int, dict]:
 
 
 def parent_of(cfg: dict) -> Path:
-    """絞り込み (イ) の親の実験 (261021 本人決定・⑦)。親は 01〜09 を行った実験だけ (入れ子にしない)。"""
+    """絞り込み (イ) の親の実験 (261021 決定・⑦)。親は 01〜09 を行った実験だけ (入れ子にしない)。"""
     p = abs_path(cfg.get("parent"), "parent")
     q = p / "output/16S/Qiime2"
     if not (p / "input/16S/config.yaml").is_file() or not (q / "07_diversity").is_dir() or not (q / "09_taxonomy").is_dir():
@@ -183,7 +183,7 @@ def with_parent(cfg: dict) -> dict:
 
 
 def check_config(cfg: dict) -> str:
-    """01〜09 の config を 01 の前に確かめる。すべて必須で、書いていなければ止める (261021 本人決定・C4/C6)。返り値: 形 (runs / parent)。"""
+    """01〜09 の config を 01 の前に確かめる。すべて必須で、書いていなければ止める (261021 決定・C4/C6)。返り値: 形 (runs / parent)。"""
     if "quality_control" in cfg:
         _die("config の quality_control は、runs: の各ランの中へ移しました (261021。ランごとに書きます)")
     if "absent_ok" in cfg:
@@ -396,7 +396,7 @@ def merged(ctx: dict) -> dict[str, Path]:
 
 def _merge_runs(ctx: dict, runs: list[dict]) -> None:
     """ランの表と代表配列をつなげる (6-1・6-9)。trim_left がランどうしでそろっているかは確かめない
-    (261026 本人決定: 結合前の位置の検査はやめた。そろえるのは config を書く人。雛形のコメントにタグ分けのランは 23・22 と書いてある)。"""
+    (261026 決定: 結合前の位置の検査はやめた。そろえるのは config を書く人。雛形のコメントにタグ分けのランは 23・22 と書いてある)。"""
     log, out = ctx["log"], ctx["out"]
     log("")
     log(f"[結合: {' + '.join(r['m'] for r in runs)}]")
@@ -497,7 +497,7 @@ def step05_phylogeny(ctx: dict) -> None:
     log, out, cfg = ctx["log"], ctx["out"], ctx["cfg"]
     log.head("05. Phylogeny (系統樹の生成)")
     C.check(ctx, "05", 1, 1, "系統樹の生成", "aligned-rep-seqs.qza, masked-aligned-rep-seqs.qza, unrooted-tree.qza, rooted-tree.qza")   # 条件の照合（261014 E1a）
-    # 261009 本人決定（D11b）: threads に関係なく 1 スレッド。2 以上だと QIIME 2 は非決定的な FastTreeMP に切り替わり、
+    # 261009 決定（D11b）: threads に関係なく 1 スレッド。2 以上だと QIIME 2 は非決定的な FastTreeMP に切り替わり、
     # 作り直すたびに木（UniFrac・Faith PD）が変わる（q2-phylogeny plugin_setup.py の説明・点検 F060/F178 の実測）
     threads = "1"
     d = out / "05_phylogeny"
@@ -559,7 +559,7 @@ def decide_sampling_depth(ctx: dict, d: Path) -> int:
 
 def step06_rarefaction(ctx: dict) -> None:
     """rarefaction curve。公式 moving-pictures 準拠 (既定 metrics ＋ 系統樹あり)。
-    [注意] マニュアル §8・アーカイブにある chao1 版 (旧 3/5・5/5)は **公式に無いため採らない** (260914 本人判断)。
+    [注意] マニュアル §8・アーカイブにある chao1 版 (旧 3/5・5/5)は **公式に無いため採らない** (260914 判断)。
     その結果、段数は 5 → 3 になった。"""
     log, out = ctx["log"], ctx["out"]
     log.head("06. Rarefaction (sampling-depth の決定)")
@@ -617,7 +617,7 @@ def step07_diversity(ctx: dict) -> None:
         "--i-table", str(out / "04_relabel" / "table_cn.qza"),
         "--p-sampling-depth", str(depth),
         "--p-n-jobs-or-threads", threads,
-        "--p-random-seed", str(seed),          # 261009 本人決定（D11a）: 希薄化の種を固定
+        "--p-random-seed", str(seed),          # 261009 決定（D11a）: 希薄化の種を固定
         "--m-metadata-file", str(out / "01_metadata" / "sample-metadata_cn.txt"),
         "--output-dir", str(d),
     ])
@@ -641,7 +641,7 @@ def step07_diversity(ctx: dict) -> None:
     if tmp.exists():
         import shutil
         shutil.rmtree(tmp)
-    for t in targets:                                  # 書き出したファイルを箇条書き（260925 本人指定）
+    for t in targets:                                  # 書き出したファイルを箇条書き（260925 指定）
         log(f"  - {t.name}")
 
 
@@ -677,8 +677,8 @@ def read_classifier_facts(path: Path) -> dict[str, str]:
 def verify_classifier(ctx: dict) -> Path:
     """B-5: 分類器は自作しない。config が指すファイルの存在を確認し、素性をログに残す。
 
-    [注意] md5 照合は行わない (260915 本人判断で廃止)。完全性はダウンロード時に人が 1 度確認する運用。
-    [注意] SILVA 版・領域・habitat・DOI は **config に書かず、付属ファイルから読む** (260915 本人判断)。
+    [注意] md5 照合は行わない (260915 判断で廃止)。完全性はダウンロード時に人が 1 度確認する運用。
+    [注意] SILVA 版・領域・habitat・DOI は **config に書かず、付属ファイルから読む** (260915 判断)。
        config に書き写すと実ファイルと食い違いうるため、実物を単一の情報源にする。
     """
     log, cfg = ctx["log"], ctx["cfg"]

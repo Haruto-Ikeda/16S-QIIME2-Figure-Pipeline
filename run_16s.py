@@ -6,7 +6,7 @@
 使い方
 ------
     conda activate rachis-qiime2-2026.7        # ※必須。絶対パス起動は不可 (B-2)
-    python ~/Claude/Scripts/16S/run_16s.py     # 実験フォルダの相対パスを対話で尋ねる
+    python <パイプラインのフォルダ>/run_16s.py  # 実験フォルダの相対パスを対話で尋ねる
 
     --stage 1   import で止める (demux.qzv を見たいとき。既定は通し)
 """
@@ -83,13 +83,13 @@ def main() -> None:
     base = exp / "input/16S"
     cfg = yaml.safe_load(open(base / "config.yaml", encoding="utf-8")) or {}
     root16 = (exp / "output/16S").resolve()
-    out = root16 / "Qiime2"                        # QIIME 2 の出力（01〜09・HTML_*）。作図は figure/・記録は logs/（260928 本人決定）
+    out = root16 / "Qiime2"                        # QIIME 2 の出力（01〜09・HTML_*）。作図は figure/・記録は logs/（260928 決定）
     out.mkdir(parents=True, exist_ok=True)
     logs = root16 / "logs"
     logs.mkdir(parents=True, exist_ok=True)
 
     stamp = datetime.now()
-    log = Q.Log(logs / f"{stamp:%y%m%d_%H%M%S}_16S.log")   # 秒まで (同じ分に 2 回起動しても混ざらない。261021 本人決定・F288)
+    log = Q.Log(logs / f"{stamp:%y%m%d_%H%M%S}_16S.log")   # 秒まで (同じ分に 2 回起動しても混ざらない。261021 決定・F288)
     Q.check_env(log)
     log("=" * 72)
     log(f"開始日時     : {stamp:%Y-%m-%d %H:%M:%S}")
@@ -109,7 +109,7 @@ def main() -> None:
 
     try:
         mode = ST.check_config(cfg)             # 01〜09 の config (すべて必須・乱数の種 D11a・分類器のパス E4a を含む。261021)
-        PC.check_config(ST.with_parent(cfg))    # 作図の config のうち、読むだけで分かるもの (261021 本人決定・案 B)
+        PC.check_config(ST.with_parent(cfg))    # 作図の config のうち、読むだけで分かるもの (261021 決定・案 B)
     except SystemExit as e:
         log(str(e))
         sys.exit(1)
@@ -117,7 +117,7 @@ def main() -> None:
         log(f"  [エラー] {e}")
         sys.exit(1)
 
-    # 01〜10 を包み、止まったときも終了の枠と注記を必ず書く (261019 本人決定・点検 F006・F141・F224・F241)
+    # 01〜10 を包み、止まったときも終了の枠と注記を必ず書く (261019 決定・点検 F006・F141・F224・F241)
     status = ""                                    # 空 = 最後まで進んだ
     try:
         if mode == "parent":                       # 絞り込み (イ): 01〜09 は行わず、親の結果から選んだ写しを作って 10 だけ (261026・7-1)
@@ -137,7 +137,7 @@ def main() -> None:
         md_dir.mkdir(parents=True, exist_ok=True)   # ステップ冒頭で明示（アーカイブ準拠）
         p1, p2, p3 = md_dir / "sample-metadata.txt", md_dir / "sample-metadata_cn.txt", md_dir / "sample_information.csv"
         ctx = dict(exp=exp, base=base, out=out, cfg=cfg, log=log)
-        listed = {r["path"].resolve() for r in ST.runs_of(cfg)}   # 自分の runs/ にあって config の runs: に無いランは使わないことを知らせる (261026 本人決定・設計 1-1)
+        listed = {r["path"].resolve() for r in ST.runs_of(cfg)}   # 自分の runs/ にあって config の runs: に無いランは使わないことを知らせる (261026 決定・設計 1-1)
         extra = sorted(d.name for d in (base / "runs").glob("*") if d.is_dir() and d.resolve() not in listed) if (base / "runs").is_dir() else []
         if extra:
             log(f"  [注記] input/16S/runs/ に、config の runs: に書いていないランがあります (使いません): {', '.join(extra)}")
@@ -189,7 +189,7 @@ def main() -> None:
         C.record(ctx, "07")
 
         # ---------------- 08 Classifier ----------------
-        # 分類器は作らない（B-5: SILVA 公式の学習済み分類器を使う）。番号の抜けが分かるようにスキップと記録する（260928 本人指示）
+        # 分類器は作らない（B-5: SILVA 公式の学習済み分類器を使う）。番号の抜けが分かるようにスキップと記録する（260928 指示）
         log.head("08. Classifier (分類器の作成)")
         log.step("08", 1, 1, True, "分類器の作成", "既存) (config の classifier.path)")
         ctx["classifier"] = ST.verify_classifier(ctx)   # 使う分類器の確認と記録（260928: 09 から移した）
@@ -213,7 +213,7 @@ def main() -> None:
     finally:
         fin = datetime.now()
         sec = int((fin - stamp).total_seconds())
-        end = ["=" * 72,                              # 冒頭の「開始日時」のブロックと対にする（260927 本人指定）
+        end = ["=" * 72,                              # 冒頭の「開始日時」のブロックと対にする（260927 指定）
                f"終了日時     : {fin:%Y-%m-%d %H:%M:%S}",
                f"所要時間     : {sec // 60} 分 {sec % 60} 秒"]
         if status:

@@ -21,18 +21,18 @@ import pandas as pd
 IMPLEMENTED = ["read_retention", "rarefaction", "alpha", "pcoa", "pcoa_matrix", "permanova", "dendrogram", "stacked_group", "stacked_sample", "heatmap", "venn", "taxon_barplot", "ancombc", "ancombc_summary"]
 ALL_FIGURES = ["read_retention", "rarefaction", "alpha", "pcoa", "pcoa_matrix", "permanova", "dendrogram",
                "stacked_group", "stacked_sample", "heatmap", "venn", "taxon_barplot", "ancombc", "ancombc_summary"]
-METHODS = ("tukey", "dunnett", "welch")   # welch は群が 2 つのときだけ（261009 本人決定）
+METHODS = ("tukey", "dunnett", "welch")   # welch は群が 2 つのときだけ（261009 決定）
 # Tol discrete rainbow（29 色）と、色数 n = 1〜23 のときに使う番号（公式 Fig. 25。tol-colors 2.2.0 から転記・公式の 29 色と一致を確認 260924）
 TOL_DISCRETE_RAINBOW = ['#E8ECFB', '#D9CCE3', '#D1BBD7', '#CAACCB', '#BA8DB4', '#AE76A3', '#AA6F9E', '#994F88', '#882E72', '#1965B0', '#437DBF', '#5289C7', '#6195CF', '#7BAFDE', '#4EB265', '#90C987', '#CAE0AB', '#F7F056', '#F7CB45', '#F6C141', '#F4A736', '#F1932D', '#EE8026', '#E8601C', '#E65518', '#DC050C', '#A5170E', '#72190E', '#42150A']
 TOL_DISCRETE_RAINBOW_INDEX = [[9], [9, 25], [9, 17, 25], [9, 14, 17, 25], [9, 13, 14, 17, 25], [9, 13, 14, 16, 17, 25], [8, 9, 13, 14, 16, 17, 25], [8, 9, 13, 14, 16, 17, 22, 25], [8, 9, 13, 14, 16, 17, 22, 25, 27], [8, 9, 13, 14, 16, 17, 20, 23, 25, 27], [8, 9, 11, 13, 14, 16, 17, 20, 23, 25, 27], [2, 5, 8, 9, 11, 13, 14, 16, 17, 20, 23, 25], [2, 5, 8, 9, 11, 13, 14, 15, 16, 17, 20, 23, 25], [2, 5, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25], [2, 5, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25, 27], [2, 4, 6, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25, 27], [2, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25, 27], [2, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25, 26, 27], [1, 3, 4, 6, 7, 8, 9, 11, 13, 14, 15, 16, 17, 19, 21, 23, 25, 26, 27], [1, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 19, 21, 23, 25, 26, 27], [1, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 25, 26, 27], [1, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 25, 26, 27, 28], [0, 1, 3, 4, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 20, 22, 24, 25, 26, 27, 28]]
 # Tol smooth rainbow（公式 Fig. 23 の 34 色。つないで連続色にし、必要な数だけ等間隔に取り出す＝何色でも作れる）
 TOL_SMOOTH_RAINBOW = ['#E8ECFB', '#DDD8EF', '#D1C1E1', '#C3A8D1', '#B58FC2', '#A778B4', '#9B62A7', '#8C4E99', '#6F4C9B', '#6059A9', '#5568B8', '#4E79C5', '#4D8AC6', '#4E96BC', '#549EB3', '#59A5A9', '#60AB9E', '#69B190', '#77B77D', '#8CBC68', '#A6BE54', '#BEBC48', '#D1B541', '#DDAA3C', '#E49C39', '#E78C35', '#E67932', '#E4632D', '#DF4828', '#DA2222', '#B8221E', '#95211B', '#721E17', '#521A13']
 PALETTE_NAMES = list(("bright", "high_contrast", "vibrant", "muted", "medium_contrast", "dark", "light", "pale")) + ["discrete_rainbow", "smooth_rainbow"]
-NO_COLOR = "#222222"   # group_subgroup_colors: none（群の色なし）のときの全群の色 = 前景・軸と同じ（261013 本人決定）
+NO_COLOR = "#222222"   # group_subgroup_colors: none（群の色なし）のときの全群の色 = 前景・軸と同じ（261013 決定）
 
 
 def palette_colors(name: str, n: int) -> list[str]:
-    """配色名から n 色を返す。色数が足りなければ止める (260924 本人決定)。
+    """配色名から n 色を返す。色数が足りなければ止める (260924 決定)。
     24 色以上が要るときは smooth_rainbow を勧める (Tol の配色で 24 色以上を出せるのは smooth_rainbow だけ)。"""
     import matplotlib.colors as mc
     import numpy as np
@@ -46,7 +46,7 @@ def palette_colors(name: str, n: int) -> list[str]:
                 else "色の多い配色 (例 discrete_rainbow は 23 色まで)にするか、個別に指定してください")
         raise Stop(f"配色 {name} は {size} 色しかありません (必要 {n} 色)。{hint}")
     cm = mc.LinearSegmentedColormap.from_list("tol_smooth_rainbow", TOL_SMOOTH_RAINBOW)
-    # 白に近い端 10% を外す (261016 本人決定・E6a。1 色目 #E8ECFB が白い背景でほぼ見えなかった。点検 F120・F125)
+    # 白に近い端 10% を外す (261016 決定・E6a。1 色目 #E8ECFB が白い背景でほぼ見えなかった。点検 F120・F125)
     return [mc.to_hex(cm(v)).upper() for v in np.linspace(0.1, 1, n)]
 TOL_QUALITATIVE = {   # Paul Tol のカテゴリ用配色。公式ページの「Colours in default order」をそのまま転記（灰・欠損用は除く）
     # 出典: https://sronpersonalpages.nl/~pault/（260924 取得）。tol-colors 2.2.0 とは dark・pale の色と high/medium-contrast の順が違ったので公式に合わせた
@@ -79,7 +79,7 @@ def load_samples(out: Path) -> pd.DataFrame:
 
 
 def check_config(cfg: dict) -> None:
-    """config を読むだけで分かる検査 (01 の前に呼ぶ。261021 本人決定・案 B)。
+    """config を読むだけで分かる検査 (01 の前に呼ぶ。261021 決定・案 B)。
     データと照らし合わせる検査 (群名・対照群・色の数) は、手順 10 の Groups で行う。"""
     run = switches(cfg)
     g = _check_grouping(cfg)
@@ -87,7 +87,7 @@ def check_config(cfg: dict) -> None:
     written = _control_written(cfg)
     if method in ("dunnett", "welch") and not written:
         raise Stop(f"stats.method: {method} のときは comparison.control_group に対照群を書いてください (none は不可)")
-    if (run.get("ancombc") or run.get("ancombc_summary")) and not written:   # 黙って図を飛ばさない (261021 本人決定・C3)
+    if (run.get("ancombc") or run.get("ancombc_summary")) and not written:   # 黙って図を飛ばさない (261021 決定・C3)
         raise Stop("#11・#12 ANCOM-BC を描くときは comparison.control_group に対照群を書いてください"
                    " (描かないなら pipeline.run の ancombc・ancombc_summary を false にしてください)")
     check_plotting(cfg)
@@ -98,7 +98,7 @@ def _is_none(v) -> bool:
 
 
 def _control_written(cfg: dict) -> str | None:
-    """対照群 (comparison.control_group)。必須で、使わないときは none (261021 本人決定)。
+    """対照群 (comparison.control_group)。必須で、使わないときは none (261021 決定)。
     値はそのときの群の名前で書く: use_subgroup: false なら "Control"、true なら "Control SubA" (control_group_composite は廃止)。"""
     comp = cfg.get("comparison")
     if not isinstance(comp, dict) or "control_group" not in comp:
@@ -120,7 +120,7 @@ def _pos_int_or_all(p: dict, k: str) -> None:
 
 
 def check_plotting(cfg: dict) -> None:
-    """plotting の値 (261021 本人決定・C4。すべて必須)。"""
+    """plotting の値 (261021 決定・C4。すべて必須)。"""
     p = cfg.get("plotting")
     if not isinstance(p, dict):
         raise Stop("config に plotting がありません")
@@ -148,10 +148,10 @@ def _check_grouping(cfg: dict) -> dict:
     for k in ("use_subgroup", "group_order", "group_subgroup_colors", "show_group_subgroup"):
         if k not in g:
             raise Stop(f"config の grouping.{k} がありません")
-    for k in ("use_subgroup", "show_group_subgroup"):        # "false" などの文字は true 扱いになるので型で確かめる (261021 本人決定・C1)
+    for k in ("use_subgroup", "show_group_subgroup"):        # "false" などの文字は true 扱いになるので型で確かめる (261021 決定・C1)
         if not isinstance(g[k], bool):
             raise Stop(f"grouping.{k} は true / false で書いてください (現在: {g[k]!r})")
-    # group_order は群名のリストか false。同じ群を 2 回書かない (261021 本人決定・C2)
+    # group_order は群名のリストか false。同じ群を 2 回書かない (261021 決定・C2)
     go = g["group_order"]
     if go is not False:
         if not isinstance(go, list) or not go:
@@ -160,7 +160,7 @@ def _check_grouping(cfg: dict) -> dict:
         dup_g = sorted({x for x in names if names.count(x) > 1})
         if dup_g:
             raise Stop(f"grouping.group_order に同じ群が 2 回以上あります: {', '.join(dup_g)}")
-    # 色は #RRGGBB の辞書か、配色名か、none だけ (色の名前 red などは受け付けない。261021 本人決定・C2)
+    # 色は #RRGGBB の辞書か、配色名か、none だけ (色の名前 red などは受け付けない。261021 決定・C2)
     spec = g["group_subgroup_colors"]
     if isinstance(spec, str):
         name = spec.strip().lower().replace("-", "_")
@@ -173,7 +173,7 @@ def _check_grouping(cfg: dict) -> dict:
                        + ", ".join(f"{k} = {v!r}" for k, v in bad.items()))
     else:
         raise Stop("grouping.group_subgroup_colors は、全部の色の辞書か、配色名 (例 muted)か、none (色なし)で書いてください")
-    # subgroups・subgroup_open_note は必須。使わないときは none (261021 本人決定)。
+    # subgroups・subgroup_open_note は必須。使わないときは none (261021 決定)。
     # 2 つのスイッチが false でも辞書を書いておいてよい (あとで true にするときのため)
     for k in ("subgroups", "subgroup_open_note"):
         if k not in g:
@@ -189,7 +189,7 @@ def _check_grouping(cfg: dict) -> dict:
     note = g["subgroup_open_note"]
     if not isinstance(note, str) or not note.strip():
         raise Stop(f"grouping.subgroup_open_note は白抜きの意味の文か none で書いてください (現在: {note!r})")
-    # サブグループごとの marker・open・scale は必須 (marker は auto = 自動で割り当て。261021 本人決定)
+    # サブグループごとの marker・open・scale は必須 (marker は auto = 自動で割り当て。261021 決定)
     for name, spec in subs.items():
         if not isinstance(spec, dict):
             raise Stop(f"grouping.subgroups.{name} は {{marker: …, open: …, scale: …}} で書いてください (現在: {spec!r})")
@@ -221,7 +221,7 @@ def _check_stats(cfg: dict) -> tuple[str, int]:
     method = str(s["method"]).strip().lower()
     if method not in METHODS:
         raise Stop(f"stats.method が不正です: {s['method']!r} (tukey | dunnett | welch)")
-    # 検定に必要な最小の n（261009 本人決定・D2a）。これ未満の群は検定から外し、図に「n < 3」と書く。必須 (261021)
+    # 検定に必要な最小の n（261009 決定・D2a）。これ未満の群は検定から外し、図に「n < 3」と書く。必須 (261021)
     if "min_n" not in s:
         raise Stop("config の stats.min_n がありません (2 以上の整数)")
     raw = s["min_n"]
@@ -239,7 +239,7 @@ class Groups:
         self.show_subgroup = g["show_group_subgroup"]      # 中の名前は show_subgroup のまま
         data_groups = sorted(set(samples["Group_name"]))
         if g["group_order"] is False:
-            # false = 検体情報 CSV の行の順（No. の順）で最初に出てきた順（260928 本人決定）。
+            # false = 検体情報 CSV の行の順（No. の順）で最初に出てきた順（260928 決定）。
             # ID (M####P####N####) の P → N の順 (CSV が複数なら P 番号の順 → No. の順。261022 に新しい ID へ)
             pn = samples["sample-id"].str.extract(r"^M\d{4}P(\d{4})N(\d{4})$").astype(int)
             order = list(dict.fromkeys(samples.assign(_p=pn[0].values, _n=pn[1].values).sort_values(["_p", "_n"])["Group_name"]))
@@ -275,7 +275,7 @@ class Groups:
         self.subgroup_by_newid = pd.Series(samples["Subgroup_name"].values, index=samples["newID"].values)
         self.group_order = order                       # Group_name の並び
 
-        # 色は grouping.group_subgroup_colors の 1 つだけ（260924 本人決定）。何に色を付けるかは設定で決まる:
+        # 色は grouping.group_subgroup_colors の 1 つだけ（260924 決定）。何に色を付けるかは設定で決まる:
         #   use_subgroup: true かつ show_group_subgroup: false → 処理×サブグループごとに色
         #   それ以外 → 元の群（Group_name）ごとに色（サブグループは元の群の色を受け継ぐ）
         # 書き方は「全部を個別に指定（辞書）」か「配色名（文字列）」。配色の色数が足りなければ止める（24 色以上は smooth_rainbow を勧める）
@@ -284,7 +284,7 @@ class Groups:
         what = "サブグループ" if self.color_by_subgroup else "群"
         spec = g["group_subgroup_colors"]
         self.color_note = ""
-        # none = 群の色なし（261013 本人決定・案 A）: 全群を前景色 #222222 で描き、色だけで群を見分ける図と群の凡例は描かない。
+        # none = 群の色なし（261013 決定・案 A）: 全群を前景色 #222222 で描き、色だけで群を見分ける図と群の凡例は描かない。
         # キーを書かない（null を含む）場合は従来どおり止める（config は明示的に書かないと止める方針）
         self.no_color = isinstance(spec, str) and spec.strip().lower() == "none"
         if self.no_color:
@@ -309,7 +309,7 @@ class Groups:
         for x in units:
             dup.setdefault(colors[x].strip().upper(), []).append(x)
         dup = {c: v for c, v in dup.items() if len(v) > 1}
-        if dup and not self.no_color:                                            # 同じ色が 2 つ以上にあれば止める（260924 本人指示）
+        if dup and not self.no_color:                                            # 同じ色が 2 つ以上にあれば止める（260924 指示）
             raise Stop(f"grouping.group_subgroup_colors で同じ色が複数の{what}に使われています: "
                        + "; ".join(f"{c} = {', '.join(v)}" for c, v in dup.items()))
         if self.color_by_subgroup:
@@ -322,26 +322,26 @@ class Groups:
             self.color = {lab: colors[first_group[lab]] for lab in self.order}
 
         self.method, self.min_n = _check_stats(cfg)
-        # 群が 2 つなら welch だけ、welch は群が 2 つのときだけ（261009 本人決定。tukey は 2 群で Student の t と同じになり、
+        # 群が 2 つなら welch だけ、welch は群が 2 つのときだけ（261009 決定。tukey は 2 群で Student の t と同じになり、
         # dunnett は 2 群で Welch に切り替わっていたため、設定しだいで検定が変わっていた）
         if len(self.order) == 2 and self.method != "welch":
             raise Stop(f"群が 2 つ ({', '.join(self.order)})のときは stats.method: welch を指定してください (現在: {self.method})")
         if self.method == "welch" and len(self.order) != 2:
             raise Stop(f"stats.method: welch は群が 2 つのときだけ使えます (現在 {len(self.order)} 群)。tukey か dunnett を指定してください")
 
-        # 対照群は、書いてあれば方法によらずデータの群にあるか確かめる (tukey でも #11・#12 で使う。261021 本人決定・C3)
+        # 対照群は、書いてあれば方法によらずデータの群にあるか確かめる (tukey でも #11・#12 で使う。261021 決定・C3)
         written = _control_written(cfg)
         if written and written not in self.order:
             hint = " (use_subgroup: true のときは「群 サブグループ」の形で書きます。例 Control SubA)" if self.use_subgroup else ""
             raise Stop(f"対照群 '{written}' (comparison.control_group) がデータの群にありません。存在する群: {self.order}{hint}")
         self.control = None
-        if self.method in ("dunnett", "welch"):     # welch も #8 の星を付ける相手として対照群が要る（261009 本人決定）
+        if self.method in ("dunnett", "welch"):     # welch も #8 の星を付ける相手として対照群が要る（261009 決定）
             if not written:
                 raise Stop(f"stats.method: {self.method} のときは comparison.control_group に対照群を書いてください (none は不可)")
             self.control = written                  # tukey では検定に対照群を使わない (#8 は文字で示す)
 
     def check_control(self, excluded: set[str]) -> None:
-        """dunnett の対照群の n を、rarefaction で除外した検体を引いた数で確かめる (261009 本人決定・D2c・時点 B)。
+        """dunnett の対照群の n を、rarefaction で除外した検体を引いた数で確かめる (261009 決定・D2c・時点 B)。
         足りなければ設定の誤りとみなして止める。excluded = 06_rarefaction/excluded_samples.tsv の sample-id。"""
         if self.method not in ("dunnett", "welch"):
             return
