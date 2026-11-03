@@ -3,9 +3,9 @@
 
 設計の正本は ../README.md「作図パイプラインの設計」節。
 - 出力先は output/16S/figure/ver<N>/ (固定。260928 に 10_figures → figure)。ファイル名は「作図一覧の番号_図の名前」。
-- **版は設定から自動で決める** (260917 本人判断・案 B): 図の中身を変える設定 (grouping・comparison・stats・plotting と上流の条件 upstream。261014 E1b)が
+- **版は設定から自動で決める** (260917 判断・案 B): 図の中身を変える設定 (grouping・comparison・stats・plotting と上流の条件 upstream。261014 E1b)が
   既存の版の settings.yaml と同じならその版に描き足し (図のフォルダがある番号は飛ばす)、どれとも違えば新しい版を作る。実行の途中で尋ねない。
-- 図のフォルダ (例 04_pcoa/)が版の中に既にあれば、その番号の図は飛ばす (260929 本人決定・案 A)。
+- 図のフォルダ (例 04_pcoa/)が版の中に既にあれば、その番号の図は飛ばす (260929 決定・案 A)。
   描き直すときは、その図のフォルダか版のフォルダをゴミ箱へ移して実行する (--redraw・--force は 261015 に廃止)。描くときは検定も config の群設定から計算し直す (図と検定を一致させるため)。
 - 図 1 枚につき PDF・図の根拠の値 (.values.csv)・検定結果 (.stats.csv)・楕円 (.ellipses.csv)を出す。
   **凡例・settings.yaml・名前の対応表 (taxa_names_<階級>.csv。261021) は ver<N>/00_info/、図は番号ごとのフォルダ (例 04_pcoa/)の直下に PDF・csv/ に CSV** (260928)。
@@ -50,7 +50,7 @@ FILE_PATTERNS = {                     # 同じ図を指標・距離・階級ご�
 
 
 class FigLog:
-    """Step 10 の記録を 09 以前と同じ形に整える (260925 本人決定)。
+    """Step 10 の記録を 09 以前と同じ形に整える (260925 決定)。
     1 図 = 見出し 1 行 (指標・距離・階級ごとの繰り返しは 1 行にまとめる)＋ 要点 1 行 (sum() で集めて次の見出しの前に出す)。
     細かい数値は CSV に任せて出さない。[注意]・[エラー]・[注記] の行だけはそのまま出す。 (版のフォルダの log.txt は 260928 に廃止。記録は logs/ にある)"""
 
@@ -64,13 +64,13 @@ class FigLog:
     def __call__(self, msg: str = "") -> None:
         if "[エラー]" in msg:
             self._out(msg)
-        elif "[注意]" in msg or "[注記]" in msg:            # 警告・[注記] は最後にまとめて出す（Log が集める。260927 本人決定）
+        elif "[注意]" in msg or "[注記]" in msg:            # 警告・[注記] は最後にまとめて出す（Log が集める。260927 決定）
             self.base(msg)
 
     def show(self, msg: str = "") -> None:        # 見出しのブロックなど、必ず出す行
         self._out(msg)
 
-    def sum(self, text: str) -> None:             # 要点は出さない（260925 本人指示: 細かい数値は CSV に任せる）
+    def sum(self, text: str) -> None:             # 要点は出さない（260925 指示: 細かい数値は CSV に任せる）
         pass
 
     def flush(self) -> None:
@@ -101,7 +101,7 @@ def step10_figures(ctx: dict) -> None:
     ctx = {**ctx, "log": log}
     out, cfg = ctx["out"], ctx["cfg"]
     log.head("10. Figures (作図)")
-    root = out.parent / "figure"                    # output/16S/figure/（260928 本人決定。out = output/16S/Qiime2）
+    root = out.parent / "figure"                    # output/16S/figure/（260928 決定。out = output/16S/Qiime2）
     root.mkdir(parents=True, exist_ok=True)       # ステップ冒頭で明示（アーカイブ準拠）
     try:
         run = PC.switches(cfg)
@@ -112,7 +112,7 @@ def step10_figures(ctx: dict) -> None:
         raise SystemExit(1)
     log.show(RULE)
     d, ver_text = resolve_version(root, cfg, log, _upstream(ctx))
-    info = d / "00_info"                                 # 凡例・settings.yaml（260928 本人決定）・名前の対応表 taxa_names_<階級>.csv（261021）
+    info = d / "00_info"                                 # 凡例・settings.yaml（260928 決定）・名前の対応表 taxa_names_<階級>.csv（261021）
     nn = G.label.value_counts()
     excl_ids = set(pd.read_csv(out / "06_rarefaction" / "excluded_samples.tsv", sep="\t", dtype=str)["sample-id"])
     na = G.label[~G.label.index.isin(list(excl_ids))].value_counts()   # 解析 (#1 以外) で使う n (261019・F039・F046)
@@ -126,7 +126,7 @@ def step10_figures(ctx: dict) -> None:
     if G.color_note:
         log(f"  {G.color_note}")
 
-    if G.no_color:                                                   # 群の色なしでは群の凡例を出さない（261013 本人決定）
+    if G.no_color:                                                   # 群の色なしでは群の凡例を出さない（261013 決定）
         pass
     else:
         PS.save_legend(info / "00_legend_group.pdf", G, log=log)              # 凡例は別ファイル（全図共通の群の凡例）
@@ -141,16 +141,16 @@ def step10_figures(ctx: dict) -> None:
     log.show(f"検体情報    00_info/sample_information.csv (解析した {n_si} 検体・リード数つき)")
     log.show(RULE)
 
-    total = 12                          # 図の番号は #1〜#12（#12 は 261007 追加）（#4 と #7 はそれぞれ 2 種類の図。260924 本人指示で番号を詰めた）
-    # 版のフォルダに図のフォルダが既にあれば、その番号の図は飛ばす（260929 本人決定・案 A）。描き直すときはフォルダをゴミ箱へ移して実行する（261015）。
+    total = 12                          # 図の番号は #1〜#12（#12 は 261007 追加）（#4 と #7 はそれぞれ 2 種類の図。260924 指示で番号を詰めた）
+    # 版のフォルダに図のフォルダが既にあれば、その番号の図は飛ばす（260929 決定・案 A）。描き直すときはフォルダをゴミ箱へ移して実行する（261015）。
     # 判定は描き始める前のフォルダの有無で決める（#4・#6・#7 は 1 つのフォルダに 2 種類の図が入るため）
     existing = {k for k, v in FIG_DIRS.items() if (d / v).is_dir()}
-    # 1 つのフォルダに 2 種類の図が入る番号 (#4・#7) は、その図の PDF があるかで判定する (261016 本人決定・E9c・点検 F271・F287)。
+    # 1 つのフォルダに 2 種類の図が入る番号 (#4・#7) は、その図の PDF があるかで判定する (261016 決定・E9c・点検 F271・F287)。
     # 片方だけ描いたあとに pipeline.run でもう片方を ON にしても描かれるように。判定は描き始める前に決める
     pdf_exists = {pat: any((d / FIG_DIRS[pat[:2]]).glob(pat)) for pat in SHARED_FIG_PATTERNS}
 
     def no_color(num: int, title: str) -> bool:
-        """群の色なしで描かない図 (色だけで群を見分ける図。261013 本人決定)。"""
+        """群の色なしで描かない図 (色だけで群を見分ける図。261013 決定)。"""
         if G.no_color:
             log.step("10", num, total, True, title, "group_subgroup_colors: none")
             log(f"  [注記] {title}: group_subgroup_colors: none のため描きません (色だけで群を見分ける図のため)")
@@ -189,13 +189,13 @@ def step10_figures(ctx: dict) -> None:
         log.step("10", 4, total, True, "#4 PCoA 交差形式 PCo1〜4", "config の pipeline.run で OFF")
     if not run["permanova"]:
         log.step("10", 5, total, True, "#5 PERMANOVA / PERMDISP 行列", "config の pipeline.run で OFF (計算も省く)")
-    elif not done(5, "#5 PERMANOVA / PERMDISP 行列"):   # Subgroup を群にしても描く（260921 本人指示）
+    elif not done(5, "#5 PERMANOVA / PERMDISP 行列"):   # Subgroup を群にしても描く（260921 指示）
         fig06_permanova(ctx, G, d, 5, total)
     if run["dendrogram"]:
         if not done(6, "#6 デンドログラム"):
             if not no_color(6, "#6 デンドログラム・検体ごと"):
                 fig07_dendrogram(ctx, G, d, 6, total)
-            fig07_dendrogram_group(ctx, G, d, 6, total)     # 群の平均の版（260921 本人追加。同じスイッチで出す）
+            fig07_dendrogram_group(ctx, G, d, 6, total)     # 群の平均の版（260921 追加。同じスイッチで出す）
         else:                                              # 飛ばしたときも 2 種類の図をそれぞれ 1 行出す (261019・F256)
             done(6, "#6 デンドログラム・群の平均")
     else:
@@ -224,16 +224,16 @@ def step10_figures(ctx: dict) -> None:
 
 
 VERSION_KEYS = ["grouping", "comparison", "stats", "plotting", "parent", "select", "upstream"]   # 図の中身を変える設定（pipeline.run は含めない）
-# parent・select = 絞り込みの形 (イ) の親と選ぶ検体 (261026 本人決定・7-5)。通常の形ではどちらも none
-# upstream = 上流の条件（261014 本人決定・E1b 案 ウ）。config からではなく 01〜09 の条件と出力から作る（_upstream）
+# parent・select = 絞り込みの形 (イ) の親と選ぶ検体 (261026 決定・7-5)。通常の形ではどちらも none
+# upstream = 上流の条件（261014 決定・E1b 案 ウ）。config からではなく 01〜09 の条件と出力から作る（_upstream）
 # 261021: config の設定はすべて必須にした (書かないと 01 の前に止まる) ので、版を比べるときの既定値 (VERSION_DEFAULTS) は廃止した
 
 
 def _upstream(ctx: dict) -> dict:
-    """図の中身を変える上流の条件 (261014 本人決定・E1b 案 ウ)。違えば新しい版にする。"""
+    """図の中身を変える上流の条件 (261014 決定・E1b 案 ウ)。違えば新しい版にする。"""
     from .steps import runs_of
     cfg, out = ctx["cfg"], ctx["out"]
-    runs = runs_of(cfg)                              # ランごとの quality_control と exclude (261026 本人決定)
+    runs = runs_of(cfg)                              # ランごとの quality_control と exclude (261026 決定)
     dv = cfg.get("diversity") or {}
     excl = pd.read_csv(out / "06_rarefaction" / "excluded_samples.tsv", sep="\t", dtype=str)
     return {"quality_control": {r["name"]: dict(r["qc"]) for r in runs},
@@ -270,7 +270,7 @@ def _upstream_diff(last: dict, cur: dict) -> str:
             else:
                 res[f"{pre}{k}"] = v
         return res
-    def fmt(v):                                       # リストは [ ] や ' ' を出さずに並べる (261023 本人決定に合わせる)
+    def fmt(v):                                       # リストは [ ] や ' ' を出さずに並べる (261023 決定に合わせる)
         return (", ".join(map(str, v)) or "なし") if isinstance(v, list) else v
     a, b = flat(a), flat(b)
     parts = []
@@ -281,7 +281,7 @@ def _upstream_diff(last: dict, cur: dict) -> str:
 
 
 def resolve_version(root: Path, cfg: dict, log, upstream: dict | None = None) -> tuple[Path, str]:
-    """設定から版を決め、その版のフォルダを返す (260917 本人判断・案 B)。
+    """設定から版を決め、その版のフォルダを返す (260917 判断・案 B)。
     既存の ver<N>/00_info/settings.yaml と設定が同じ → その版に描き足す / どれとも違う → 新しい版。"""
     cur = _settings(cfg, upstream)
     versions = {}
@@ -325,7 +325,7 @@ def _shown_labels(G, order: list | None = None) -> list[str]:
 
 
 def _warn_labels(log, labels: list[str]) -> None:
-    """45° の群名が下余白 20 mm に収まらない可能性があれば警告する (260921 本人指示。図は見切れうる)。"""
+    """45° の群名が下余白 20 mm に収まらない可能性があれば警告する (260921 指示。図は見切れうる)。"""
     over = PS.labels_overflow(labels)
     if over:
         log(f"  [注意] 群名が長く、下余白 {PS.MARGIN_B} mm で見切れている可能性があります (群名を短くしてください): "
@@ -342,14 +342,14 @@ SHARED_FIG_PATTERNS = ("04_pcoa_*.pdf", "04_pcoa-matrix_*.pdf", "07_stacked-grou
 
 
 def _fig_dir(d: Path, name: str) -> Path:
-    """図の番号ごとのフォルダ (260928 本人決定: 同じ番号の図は同じフォルダ。PDF はこの直下、CSV は csv/)。"""
+    """図の番号ごとのフォルダ (260928 決定: 同じ番号の図は同じフォルダ。PDF はこの直下、CSV は csv/)。"""
     sub = d / FIG_DIRS[name[:2]]
     sub.mkdir(exist_ok=True)
     return sub
 
 
 def _csv_dir(d: Path, name: str) -> Path:
-    """CSV は図のフォルダの中の csv/ (260928 本人決定)。"""
+    """CSV は図のフォルダの中の csv/ (260928 決定)。"""
     sub = _fig_dir(d, name) / "csv"
     sub.mkdir(exist_ok=True)
     return sub
@@ -376,7 +376,7 @@ def _tops(data: list) -> list[float]:
 def _ylim_for(G, res: dict, data: list) -> tuple[float, float, float]:
     """データ範囲 (平均 + SD を含む)と有意差の数から y 軸を決める (ブラケットは段数、対照群との星は 1 段ぶん確保)。"""
     allv = np.concatenate([x for x in data if len(x)] + [np.array([t for t in _tops(data) if np.isfinite(t)])])
-    levels = len(_sig_items(G, res))                 # どの方法もブラケットを段に積む（261009 本人決定）。「n < 3」の印も 1 段
+    levels = len(_sig_items(G, res))                 # どの方法もブラケットを段に積む（261009 決定）。「n < 3」の印も 1 段
     return PS.choose_ylim(float(allv.min()), float(allv.max()), levels)
 
 
@@ -393,9 +393,9 @@ def _draw_significance(ax, G, res: dict, xpos: dict, data: list, lo: float, hi: 
 def _sig_items(G, res: dict) -> list:
     """ブラケットに描くもの: (群 A, 群 B, 文字, 線を引くか)。
     tukey = 有意な全ペア、dunnett = 対照群と各群、welch = 2 群の 1 組。どれもブラケットで結ぶ
-    (261009 本人決定。それまで dunnett は群の上に星だけだった)。
+    (261009 決定。それまで dunnett は群の上に星だけだった)。
     検定から外した群 (n < stats.min_n)は線を引かず、どの方法でもその群の真上に「n < 3」とだけ書く
-    (ブラケットの最下段と同じ高さ。261009 本人決定)。"""
+    (ブラケットの最下段と同じ高さ。261009 決定)。"""
     items = [(r["groupA"], r["groupB"], PS.p_stars(r["p"]), True) for r in res["rows"] if PS.p_stars(r["p"])]
     label = f"n < {res.get('min_n', 2)}"
     return items + [(g, g, label, False) for g in res["skipped"]]
@@ -428,24 +428,24 @@ def fig01_read_depth(ctx: dict, G, d: Path, n: int, total: int) -> None:
     col = "non-chimeric"
     data = [t.loc[t.group == g, col].to_numpy(float) for g in G.order]
     hollow = [t.loc[t.group == g, "excluded"].to_numpy() for g in G.order]
-    labels = _shown_labels(G)                     # 群名に n 数は併記しない（260917 本人指示・全図共通。n は values.csv とログに残す）
+    labels = _shown_labels(G)                     # 群名に n 数は併記しない（260917 指示・全図共通。n は values.csv とログに残す）
 
     _warn_labels(log, labels)
     fig, ax, xpos = PS.box_panel(labels, "Non-chimeric reads")
     PS.dots_mean_sd(ax, data, [G.color[g] for g in G.order], hollow)
-    ax.axhline(depth, color="#999999", lw=0.7, ls=(0, (4, 2)), zorder=0)   # 破線と注記は #999999（260921 本人指示）
+    ax.axhline(depth, color="#999999", lw=0.7, ls=(0, (4, 2)), zorder=0)   # 破線と注記は #999999（260921 指示）
     ax.axhline(floor, color="#999999", lw=0.6, ls=(0, (1, 2)), zorder=0)
 
     res = GS.compare(dict(zip(G.order, data)), G.order, G.method, G.control, G.min_n)
     lo, hi, step = _ylim_for(G, res, data)
     ax.set_ylim(lo, hi)
     hi = _draw_significance(ax, G, res, xpos, data, lo, hi)
-    lo, hi = PS.fixed_ticks(ax, lo, hi)               # 目盛 5 個（260924 本人決定）
+    lo, hi = PS.fixed_ticks(ax, lo, hi)               # 目盛 5 個（260924 決定）
     PS.keep_brackets(ax)                         # 伸ばした軸でも、ブラケットは描いたときの見た目のまま (261020・F122)
     ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v / 1000:g}k" if v else "0"))
-    # 注記は depth だけ、破線の下・左端に書く（260921 本人指示。floor の数値は書かない＝点線だけ残す）
+    # 注記は depth だけ、破線の下・左端に書く（260921 指示。floor の数値は書かない＝点線だけ残す）
     ax.annotate(f"depth {depth:,}", xy=(-0.45, depth), xytext=(0, -2.5), textcoords="offset points",
-                fontsize=PS.FS_NOTE, va="top", ha="left", color="#999999")   # 破線から 2.5 pt 下げる（260921 本人指示）
+                fontsize=PS.FS_NOTE, va="top", ha="left", color="#999999")   # 破線から 2.5 pt 下げる（260921 指示）
     fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
     matplotlib.pyplot.close(fig)
 
@@ -468,7 +468,7 @@ def fig01_read_depth(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
 
 # ============================================================ #2
-# 指標の表示名の単一正本（260921 本人決定）。ファイル名は QIIME 2 の名前のまま、図に出す名前だけをここで決める。
+# 指標の表示名の単一正本（260921 決定）。ファイル名は QIIME 2 の名前のまま、図に出す名前だけをここで決める。
 # 人名・手法名（Shannon・Faith・Pielou・Jaccard・Bray–Curtis・UniFrac）は大文字、それ以外は文頭だけ大文字。
 # Bray–Curtis はエンダッシュ（2 人の人名）。
 METRIC_LABEL = {
@@ -509,7 +509,7 @@ def fig02_rarefaction(ctx: dict, G, d: Path, n: int, total: int) -> None:
             raise SystemExit(1)
         grp = per.index.map(G.label_by_newid)
 
-        labels = list(G.order)                    # 群名に n 数は併記しない（260917 本人指示・全図共通）
+        labels = list(G.order)                    # 群名に n 数は併記しない（260917 指示・全図共通）
         units = int(np.ceil(depths[-1] / PS.READS_PER_UNIT))          # 横幅 = 5,000 リード 16 mm × 区間の数（260929）
         xmax = units * PS.READS_PER_UNIT
         fig, ax = PS.fixed_axes(units * PS.MM_PER_UNIT)
@@ -546,7 +546,7 @@ ALPHA_METRICS = [(m, METRIC_LABEL[m]) for m in ("observed_features", "shannon", 
 
 
 def _log_skipped(log, res: dict) -> None:
-    """検定から外した群を注記に回す ([注記] は注記に集める印。最後の注記では印を外して出る。[注意] は使わない。261009 本人決定)。"""
+    """検定から外した群を注記に回す ([注記] は注記に集める印。最後の注記では印を外して出る。[注意] は使わない。261009 決定)。"""
     if res["skipped"]:
         n = {r["groupA"]: r["n_A"] for r in res["rows"]} | {r["groupB"]: r["n_B"] for r in res["rows"]}
         log(f"  [注記] n < {res['min_n']} のため検定から外した群があります: "
@@ -582,9 +582,9 @@ def fig03_alpha(ctx: dict, G, d: Path, n: int, total: int) -> None:
             log(f"  [エラー] 検体数が合いません: {len(v)} ≠ 全検体 {len(G.label_by_newid)} − 除外 {len(excl)} = {expect}")
             raise SystemExit(1)
         grp = v.index.map(G.label_by_newid)
-        order = [g for g in G.order if (grp == g).any()]   # 全検体が除外された群 (n = 0)は外す。1 ≤ n < 3 は残して「n < 3」(261020 本人決定)
+        order = [g for g in G.order if (grp == g).any()]   # 全検体が除外された群 (n = 0)は外す。1 ≤ n < 3 は残して「n < 3」(261020 決定)
         data = [v[grp == g].to_numpy(float) for g in order]
-        labels = _shown_labels(G, order)          # 群名に n 数は併記しない（260917 本人指示・全図共通）
+        labels = _shown_labels(G, order)          # 群名に n 数は併記しない（260917 指示・全図共通）
 
         if k == 1:
             _warn_labels(log, labels)
@@ -594,7 +594,7 @@ def fig03_alpha(ctx: dict, G, d: Path, n: int, total: int) -> None:
         lo, hi, step = _ylim_for(G, res, data)
         ax.set_ylim(lo, hi)
         hi = _draw_significance(ax, G, res, xpos, data, lo, hi, order)
-        lo, hi = PS.fixed_ticks(ax, lo, hi)           # 目盛 5 個（260924 本人決定）
+        lo, hi = PS.fixed_ticks(ax, lo, hi)           # 目盛 5 個（260924 決定）
         PS.keep_brackets(ax)                         # 伸ばした軸でも、ブラケットは描いたときの見た目のまま (261020・F122)
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
         matplotlib.pyplot.close(fig)
@@ -622,12 +622,12 @@ def _scatter_panel(ax, G, x, y, grp, sub, markers, present_subs) -> list[dict]:
     """散布図 1 枚ぶん (原点の線・群ごとの楕円・点)。楕円の数値を返す (CSV とログに残す)。"""
     ax.axhline(0, **PS.ORIGIN_LINE)
     ax.axvline(0, **PS.ORIGIN_LINE)
-    # 描く単位 = config の群（use_subgroup: true なら 処理×サブグループ）。色は G.color（260924 本人決定の 4 パターン）:
+    # 描く単位 = config の群（use_subgroup: true なら 処理×サブグループ）。色は G.color（260924 決定の 4 パターン）:
     #   show_group_subgroup: true  → 元の群の色＋サブグループの記号 / false → use_subgroup: true ならサブグループの色・丸、false なら群の色・丸
     ells = []
     for g in G.order:
         m = np.asarray(grp == g)
-        if not m.any():                                # 全検体が除外された群 (n = 0)は外す (261020 本人決定)
+        if not m.any():                                # 全検体が除外された群 (n = 0)は外す (261020 決定)
             continue
         e = PS.data_ellipse(x[m], y[m])
         if e is not None:
@@ -771,7 +771,7 @@ def fig05_pcoa_matrix(ctx: dict, G, d: Path, n: int, total: int) -> None:
 # ============================================================ #5
 NPERM = 999
 PERM_SEED = 0          # 置換検定の乱数の種（固定。同じ入力から必ず同じ q が出るように。260917 決定）
-CELL_MM = PS.SCATTER_AX_MM   # 行列の 1 マス（交差形式の PCoA #4 と同じ 48 mm。260921 本人決定・260923 に 46 → 48）
+CELL_MM = PS.SCATTER_AX_MM   # 行列の 1 マス（交差形式の PCoA #4 と同じ 48 mm。260921 決定・260923 に 46 → 48）
 CELL_GAP_MM = 4        # マスのあいだ（#4 と同じ 4 mm）
 
 
@@ -832,7 +832,7 @@ def fig06_permanova(ctx: dict, G, d: Path, n: int, total: int) -> None:
             keep = [s for s, g in zip(D.index, grp) if g in (a, b)]
             labs = [g for g in grp if g in (a, b)]
             na, nb = labs.count(a), labs.count(b)
-            # 検定しない組（261009 本人決定・D2d）: n < stats.min_n の群を含む組は計算しない。
+            # 検定しない組（261009 決定・D2d）: n < stats.min_n の群を含む組は計算しない。
             # 並べ替えで取りうる最小の p（= 1 / 区別できる分け方の数。両群が同じ数なら分け方は半分）が 0.05 を超える組は、
             # どれだけ差があっても有意になれないので「not testable」として q の計算から外す（R² は色として描く）
             if na < G.min_n or nb < G.min_n:
@@ -843,7 +843,7 @@ def fig06_permanova(ctx: dict, G, d: Path, n: int, total: int) -> None:
             ways = math.comb(na + nb, na) // (2 if na == nb else 1)
             min_p = 1.0 / ways
             sub = dm.filter(keep)
-            with warnings.catch_warnings():        # scikit-bio の内部 PCoA の警告 (負の固有値・全次元の計算) は出さない。以前と同じ (261021 本人決定・F048 案 b)
+            with warnings.catch_warnings():        # scikit-bio の内部 PCoA の警告 (負の固有値・全次元の計算) は出さない。以前と同じ (261021 決定・F048 案 b)
                 warnings.simplefilter("ignore")
                 pa = permanova(sub, labs, permutations=NPERM, seed=PERM_SEED)
                 pdp = permdisp(sub, labs, permutations=NPERM, seed=PERM_SEED)
@@ -880,7 +880,7 @@ def fig06_permanova(ctx: dict, G, d: Path, n: int, total: int) -> None:
                 v = norm(r.R2)
                 face, tc = cmap(v), "white"                # マスの中の文字は白（全図共通・261009）
                 txt = (f"PERMANOVA\n{_qfmt(r.permanova_q)}\n\nPERMDISP\n{_qfmt(r.permdisp_q)}" if r.testable
-                       else f"not testable\n(min p = {r.min_p:.2f})")      # 図の中は英語（261009 本人決定・案 a）
+                       else f"not testable\n(min p = {r.min_p:.2f})")      # 図の中は英語（261009 決定・案 a）
             ax.add_patch(Rectangle((c * step_mm, rr * step_mm), CELL_MM, CELL_MM, facecolor=face, lw=0))
             ax.text(c * step_mm + CELL_MM / 2, rr * step_mm + CELL_MM / 2, txt,
                     ha="center", va="center", fontsize=PS.FS_CELL, color=tc, linespacing=1.15)
@@ -903,7 +903,7 @@ def fig06_permanova(ctx: dict, G, d: Path, n: int, total: int) -> None:
             log("  [注意] 左の群名が長く、左余白 15 mm で見切れている可能性があります (群名を短くしてください): "
                 + ", ".join(f"{g} (約 {h:.1f} mm)" for g, h in over))
         ax.set_title(title, fontsize=PS.TITLE_FS, loc="left", pad=2)
-        # カラーバーは一番上のマスの右隣に、横向き・1 マス分の幅で置く（縦はそのマスの中央。260921 本人決定）
+        # カラーバーは一番上のマスの右隣に、横向き・1 マス分の幅で置く（縦はそのマスの中央。260921 決定）
         cb_w = CELL_MM
         cb_x = PS.MARGIN_L + step_mm
         cb_y = PS.MARGIN_B + grid - CELL_MM / 2 - 1.5
@@ -933,15 +933,15 @@ def fig06_permanova(ctx: dict, G, d: Path, n: int, total: int) -> None:
     log(f"  置換 {NPERM} 回・種 {PERM_SEED}・BH (検定ごと)・scikit-bio {skbio.__version__} (permanova / permdisp)")
 
 
-LEAF_MM = 4            # 1 検体 = 4 mm（#6 検体版・#7 共通。260922 本人決定: 3 mm → 4 mm。群 8 mm = 検体 2 本分・記号に余裕 (260922 時点は番号も)。X01 で約 520 mm）
+LEAF_MM = 4            # 1 検体 = 4 mm（#6 検体版・#7 共通。260922 決定: 3 mm → 4 mm。群 8 mm = 検体 2 本分・記号に余裕 (260922 時点は番号も)。X01 で約 520 mm）
 BAND_MM, BAND_GAP_MM = 3.0, 0.5   # 葉の下: 群の色の帯 → サブグループの記号 → 検体名 (45°)
-# 葉の下の文字は検体名 (newID) を 45° (261022 本人決定。それまでは群の中の番号を 0°)。下の余白は広げず、長い名前は見切れてよい
+# 葉の下の文字は検体名 (newID) を 45° (261022 決定。それまでは群の中の番号を 0°)。下の余白は広げず、長い名前は見切れてよい
 
 
 def fig07_dendrogram(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#6 デンドログラム (4 距離 × 1 枚。260921 本人決定)。
+    """#6 デンドログラム (4 距離 × 1 枚。260921 決定)。
     UPGMA (average)で距離行列をそのまま木にする (Ward はユークリッド距離が前提なので使わない)。
-    縦向き・葉は下・葉 1 つ 4 mm・縦軸は距離の目盛を出す。cophenetic 相関は出さない (本人決定)。
+    縦向き・葉は下・葉 1 つ 4 mm・縦軸は距離の目盛を出す。cophenetic 相関は出さない (決定)。
     葉の下: 群の色の帯 → サブグループの記号 (show_subgroup: true のとき。#4 と同じ記号) → 検体名 45° (261022。見切れてよい)。
     凡例は既存の 00_legend_group-subgroup.pdf を使う。"""
     from matplotlib.patches import Rectangle
@@ -969,7 +969,7 @@ def fig07_dendrogram(ctx: dict, G, d: Path, n: int, total: int) -> None:
         for sp in ("top", "right", "bottom"):
             ax.spines[sp].set_visible(False)
         ax.set_xlim(0, N * 10)
-        PS.fixed_ticks(ax, 0, float(Z[:, 2].max()))   # 目盛 5 個（260924 本人決定）
+        PS.fixed_ticks(ax, 0, float(Z[:, 2].max()))   # 目盛 5 個（260924 決定）
         ax.set_xticks([])
         ax.set_ylabel("Distance (UPGMA)")
         ax.set_title(title, fontsize=PS.TITLE_FS, loc="left", pad=2)
@@ -993,7 +993,7 @@ def fig07_dendrogram(ctx: dict, G, d: Path, n: int, total: int) -> None:
             y -= 1.0
         for i, s in enumerate(leaves):
             bx.text(i * LEAF_MM + LEAF_MM / 2, y, s, fontsize=PS.XLABEL_FS, rotation=PS.XLABEL_ROT, rotation_mode="anchor",
-                    ha="right", va="top")   # 検体名 45° (261022 本人決定。見切れてよい)
+                    ha="right", va="top")   # 検体名 45° (261022 決定。見切れてよい)
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
         matplotlib.pyplot.close(fig)
 
@@ -1009,12 +1009,12 @@ def fig07_dendrogram(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
 
 def fig07_dendrogram_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#6 デンドログラム (群の平均・4 距離 × 1 枚。260921 本人追加)。検体版とは別に出す。
-    群間の距離 = 群の中心どうしの距離 (PCoA の空間での重心間の距離。PERMANOVA と同じ考え方) → UPGMA (261009 本人決定・D7)。
+    """#6 デンドログラム (群の平均・4 距離 × 1 枚。260921 追加)。検体版とは別に出す。
+    群間の距離 = 群の中心どうしの距離 (PCoA の空間での重心間の距離。PERMANOVA と同じ考え方) → UPGMA (261009 決定・D7)。
       d_AB² = mean(d²_ij, i∈A, j∈B) − Σ_{i,i'∈A} d²_ii' / (2 n_A²) − Σ_{j,j'∈B} d²_jj' / (2 n_B²)。負になれば 0 (非ユークリッド距離)。
       それまでの「群 A の検体 × 群 B の検体の距離の平均」は群内のばらつきが足し込まれ、ばらつきの小さい群ほど近く見えた (点検 F064)。
     群の単位は config に従う (use_subgroup: false → Group_name、true → 処理 × サブグループ)。
-    見た目: 1 群 8 mm・葉の真下に群の色の帯・その下に名前 45° (黒。use_subgroup: true ならサブグループ名だけ)。260921 本人指示。"""
+    見た目: 1 群 8 mm・葉の真下に群の色の帯・その下に名前 45° (黒。use_subgroup: true ならサブグループ名だけ)。260921 指示。"""
     from scipy.cluster.hierarchy import dendrogram, linkage
     from scipy.spatial.distance import squareform
     log, out = ctx["log"], ctx["out"]
@@ -1059,11 +1059,11 @@ def fig07_dendrogram_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         for sp in ("top", "right", "bottom"):
             ax.spines[sp].set_visible(False)
         ax.set_xlim(0, N * 10)
-        PS.fixed_ticks(ax, 0, float(Z[:, 2].max()))   # 目盛 5 個（260924 本人決定）
+        PS.fixed_ticks(ax, 0, float(Z[:, 2].max()))   # 目盛 5 個（260924 決定）
         ax.set_xticks([])
         ax.set_ylabel("Centroid distance (UPGMA)")
         ax.set_title(title, fontsize=PS.TITLE_FS, loc="left", pad=2)
-        # 葉の真下に群の色の帯、その下に名前 45°（黒）。use_subgroup: true のときは名前 = サブグループ名だけ（260921 本人指示）
+        # 葉の真下に群の色の帯、その下に名前 45°（黒）。use_subgroup: true のときは名前 = サブグループ名だけ（260921 指示）
         from matplotlib.patches import Rectangle
         shown = [g.split(" ", 1)[1] for g in leaves] if (G.use_subgroup and G.show_subgroup) else leaves
         W = PS.MM_PER_GROUP
@@ -1096,10 +1096,10 @@ def fig07_dendrogram_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         log.sum(f"群 {N}")
 
 
-# ---------------- #7 積み上げ棒（260921 本人決定） ----------------
+# ---------------- #7 積み上げ棒（260921 決定） ----------------
 # 色 = Paul Tol の discrete rainbow の「載せるタクソン数 N 色用の組」を逆順（下の層ほど赤）＋ Others 灰
-# （261016 本人決定・E6b。それまでは 20 色用の組の先頭 N 色で、N = 12 では暗い赤が続き下の層が見分けにくかった。点検 F123・F279）。
-# discrete rainbow は 23 色までなので、24 以上は smooth_rainbow から等間隔に取る（261021 本人決定・案 ア。隣どうしの色は近くなる）
+# （261016 決定・E6b。それまでは 20 色用の組の先頭 N 色で、N = 12 では暗い赤が続き下の層が見分けにくかった。点検 F123・F279）。
+# discrete rainbow は 23 色までなので、24 以上は smooth_rainbow から等間隔に取る（261021 決定・案 ア。隣どうしの色は近くなる）
 TAXA_MAX = 23
 TITLE_MAX_LINES = 3     # #10 のタイトルは 3 行まで (上余白 13 mm。260923)
 
@@ -1110,8 +1110,8 @@ def _taxa_colors(n: int) -> list[str]:
 
 OTHERS_COLOR = "#BBBBBB"
 BAR_FRAC = 0.8          # 棒の幅（1 群 / 1 検体の幅に対する割合。棒のあいだに隙間を空ける）
-BAR_ALPHA = 0.6         # #10 の棒の塗りの濃さ（群の色を薄くして、棒の中の点を見せる。260924 に 0.3・260928 本人決定で 0.6。規約 Skills/figure-plotting と同じ）
-# #10 の縦軸の上端は決まった段から選ぶ（260924 本人決定）。1・2・4・6・8 の階段 (桁共通) で下限 0.4%（261020 本人決定: 1・2・4 から 6・8 を足し、4 → 10 などの隙間を埋めた）。
+BAR_ALPHA = 0.6         # #10 の棒の塗りの濃さ（群の色を薄くして、棒の中の点を見せる。260924 に 0.3・260928 決定で 0.6。規約 Skills/figure-plotting と同じ）
+# #10 の縦軸の上端は決まった段から選ぶ（260924 決定）。1・2・4・6・8 の階段 (桁共通) で下限 0.4%（261020 決定: 1・2・4 から 6・8 を足し、4 → 10 などの隙間を埋めた）。
 # 4 等分した目盛がどの段でも読みやすい数になる（1・2・5 の階段では 0.5 が 0.125 刻みになった）。X01 の属で軸は 13 種類 (261020)
 TAXON_BAR_TOPS = (0.4, 0.6, 0.8, 1, 2, 4, 6, 8, 10, 20, 40, 60, 80, 100)
 # アーカイブ plot_02 の名前の整形（normalize_taxon_header）をそのまま移植。SILVA 144 の k__ にも対応させた
@@ -1157,14 +1157,14 @@ def taxon_name_archive(s: str, max_level: int) -> str:
     while j >= 0 and (vals[j] == "" or _uncultured(vals[j]) or vals[j] == vals[j + 1]):
         j -= 1
     anchor = vals[j] if j >= 0 else (vals[0] if vals else "")
-    # 印の語（uncultured・Incertae_Sedis など）は名前として残さず "__" にする（260923 本人決定・案 A。
+    # 印の語（uncultured・Incertae_Sedis など）は名前として残さず "__" にする（260923 決定・案 A。
     # アーカイブは小文字にそろえずに比べていたため "__Incertae_Sedis" と表示されていた）
     tail = ["__" if (not vals[t] or _uncultured(vals[t])) else "__" + vals[t] for t in range(j + 1, max_level + 1)]
     return anchor + ";" + ";".join(tail) if anchor else ";".join(tail)
 
 
 def _unique_names(raw: list[str], names: list[str]) -> list[str]:
-    """同じ名前になった行は足さず、名前で区別できるようにする (260923 本人決定)。
+    """同じ名前になった行は足さず、名前で区別できるようにする (260923 決定)。
     区別のしかた: 名前の先頭 (基準の階級) より上の階級を、近い順に 1 つずつ前に足す (例 Lactobacillales;Enterococcus--other)。
     空の階級と印の語は足さない (261019・F010・F013・F032。以前は基準より下の階級や Incertae_Sedis を足していた)。
     それでも同じなら末尾に (2)(3) を付ける (例 属名が空の行と Incertae_Sedis の行。番号は表の行の順)。"""
@@ -1202,7 +1202,7 @@ def _display_names(out: Path, rank: str):
 
 def _write_sample_information(ctx: dict, info: Path) -> int:
     """01 の sample_information.csv (検体情報 CSV の全列) に、最終のリード数 (Reads = キメラ除去後。#1 の縦軸と同じ) を
-    Subgroup_name のすぐ後ろへ足して 00_info/ に書く (261024 本人決定)。CSV は読み直さない (01 と食い違わないように)。"""
+    Subgroup_name のすぐ後ろへ足して 00_info/ に書く (261024 決定)。CSV は読み直さない (01 と食い違わないように)。"""
     out = ctx["out"]
     t = pd.read_csv(out / "01_metadata" / "sample_information.csv", encoding="utf-8-sig", dtype=str, keep_default_na=False)
     reads = read_denoising_stats(merged(ctx)["stats"]).set_index("sample-id")["non-chimeric"]
@@ -1212,7 +1212,7 @@ def _write_sample_information(ctx: dict, info: Path) -> int:
 
 
 def _write_taxa_names(ctx: dict, info: Path) -> None:
-    """表示名と元の SILVA 系統の対応表を階級ごとに 1 つ出す (261021 本人決定・F033/F086 案 a。(2) の行がどれか分かるように)。"""
+    """表示名と元の SILVA 系統の対応表を階級ごとに 1 つ出す (261021 決定・F033/F086 案 a。(2) の行がどれか分かるように)。"""
     _, ranks = _plot_cfg(ctx)
     for rank in ranks:
         t, _, uniq = _display_names(ctx["out"], rank)
@@ -1220,7 +1220,7 @@ def _write_taxa_names(ctx: dict, info: Path) -> None:
 
 
 def _taxa_relative(ctx: dict, rank: str):
-    """collapsed_table_<rank>.tsv → 検体ごとの相対存在量 (%)。名前はアーカイブと同じ整形 (260921 本人決定)。
+    """collapsed_table_<rank>.tsv → 検体ごとの相対存在量 (%)。名前はアーカイブと同じ整形 (260921 決定)。
     同じ名前になった行は足さず、上の階級を足して区別する。
     返り値: (相対存在量 [タクソン × 検体], 除外検体の集合, 同名で足した行数)"""
     out = ctx["out"]
@@ -1234,7 +1234,7 @@ def _taxa_relative(ctx: dict, rank: str):
 
 
 def _top_taxa(ra: pd.DataFrame, G, top_n: int) -> tuple[pd.DataFrame, list[str]]:
-    """上位 N = 群ごとの平均を出してから、その合計の大きい順 (260922 本人決定・アーカイブ plot_03 と同じ)。
+    """上位 N = 群ごとの平均を出してから、その合計の大きい順 (260922 決定・アーカイブ plot_03 と同じ)。
     群を同じ重みで扱う (検体数の多い群に引っ張られない)。群 = config の群。#7・#8 で共通。"""
     grp = ra.columns.map(G.label_by_newid)
     gm = pd.DataFrame({g: ra.loc[:, grp == g].mean(axis=1) for g in G.order if (grp == g).any()})
@@ -1285,14 +1285,14 @@ def _plot_cfg(ctx: dict) -> tuple[int, list[str]]:
 
 
 def _top_n_or_all(ctx: dict, k: str) -> float:
-    """ancombc_top_n・ancombc_summary_top_n。all は上限なし (math.inf。261021 本人決定で #11 も all を可に)。"""
+    """ancombc_top_n・ancombc_summary_top_n。all は上限なし (math.inf。261021 決定で #11 も all を可に)。"""
     v = ctx["cfg"]["plotting"][k]
     return math.inf if isinstance(v, str) and v.strip().lower() == "all" else v
 
 
 def _bottom_band(fig, fig_w, fig_h, ax_w, pitch, colors_per_bar, draw: bool = True):
     """軸の下余白に mm 座標の軸を重ね、群の色の帯を描く。帯の下端の y (mm) を返す。
-    draw=False (群の色なし)なら帯は描かず、位置だけ同じにする (群名・「n < 3」の位置は変えない。261013 本人決定)。"""
+    draw=False (群の色なし)なら帯は描かず、位置だけ同じにする (群名・「n < 3」の位置は変えない。261013 決定)。"""
     from matplotlib.patches import Rectangle
     bx = fig.add_axes([PS.MARGIN_L / fig_w, 0, ax_w / fig_w, PS.MARGIN_B / fig_h])
     bx.set_xlim(0, ax_w)
@@ -1305,7 +1305,7 @@ def _bottom_band(fig, fig_w, fig_h, ax_w, pitch, colors_per_bar, draw: bool = Tr
 
 
 def _band_note(bx, y: float, pitch: float, j: int, color, text: str) -> None:
-    """群の色の帯の中に短い文字を書く (例「n < 3」= 検定・計算から外した群。261009 本人決定)。
+    """群の色の帯の中に短い文字を書く (例「n < 3」= 検定・計算から外した群。261009 決定)。
     文字の色は帯の色の明るさで白か前景色を選ぶ。"""
     r, g, b = matplotlib.colors.to_rgb(color)
     tc = PS.GREY if 0.299 * r + 0.587 * g + 0.114 * b > 0.55 else "white"
@@ -1313,7 +1313,7 @@ def _band_note(bx, y: float, pitch: float, j: int, color, text: str) -> None:
 
 
 def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#7 積み上げ棒・群平均 (階級ごとに 1 枚。260921 本人決定)。
+    """#7 積み上げ棒・群平均 (階級ごとに 1 枚。260921 決定)。
     検体ごとに相対存在量 (%) → 群で平均。除外検体は平均に入れない。上位 N = 群平均の合計順 (群を同じ重みで扱う)。
     1 群 8 mm・1 位が一番下・Others が一番上。葉の下に群の色の帯・その下に名前 45° (use_subgroup: true ならサブグループ名だけ)。"""
     log = ctx["log"]
@@ -1333,7 +1333,7 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         _stack(ax, np.arange(len(order)), gm, BAR_FRAC, colors)
         ax.set_xlim(-0.5, len(order) - 0.5)
         ax.set_ylim(0, 100)
-        ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 本人決定）
+        ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 決定）
         ax.set_xticks([])
         ax.spines["bottom"].set_visible(False)
         ax.set_ylabel("Relative abundance (%)")
@@ -1345,7 +1345,7 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
             bx.text(i * W + W / 2 + 1.0, y - 1.0, lab, fontsize=PS.XLABEL_FS, rotation=PS.XLABEL_ROT,
                     ha="right", va="top", rotation_mode="anchor")
         over = [(x, h) for x in shown if (h := PS.rotated_label_mm(x) + BAND_GAP_MM + BAND_MM + 1.0) > PS.MARGIN_B]
-        if over:                                           # 名前が下余白に収まらないとき（260924 本人指示）
+        if over:                                           # 名前が下余白に収まらないとき（260924 指示）
             log(f"  [注意] 群名が長く、下余白 {PS.MARGIN_B} mm で見切れている可能性があります (群名を短くしてください): "
                 + ", ".join(f"{x} (約 {h:.1f} mm)" for x, h in over))
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
@@ -1361,9 +1361,9 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
 
 def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#7 積み上げ棒・検体ごと (階級ごとに 1 枚。260921 本人決定)。
+    """#7 積み上げ棒・検体ごと (階級ごとに 1 枚。260921 決定)。
     1 検体 4 mm (#6 検体版と同じ)。並び = 群の順 → サブグループの定義順 → newID の末尾の番号。
-    除外検体は枠だけ描き、中に「< 10,000 reads」 (下限 floor の値。260922 本人決定)。葉の下は #6 検体版と同じ (群の色の帯 → サブグループの記号 → 検体名 45°)。"""
+    除外検体は枠だけ描き、中に「< 10,000 reads」 (下限 floor の値。260922 決定)。葉の下は #6 検体版と同じ (群の色の帯 → サブグループの記号 → 検体名 45°)。"""
     import re
     from matplotlib.patches import Rectangle
     log = ctx["log"]
@@ -1381,7 +1381,7 @@ def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
         name = f"07_stacked-sample_{rank}"
         log.step("10", n, total, False, f"#7 積み上げ棒・検体ごと ({k}/{len(ranks)})", f"{name}.pdf")
         ra, excl, _ = _taxa_relative(ctx, rank)
-        floor = int(ctx["cfg"]["diversity"]["sampling_depth_floor"])   # 除外検体の枠に書く（N.D. は「未検出」と読まれるため。260922 本人決定）
+        floor = int(ctx["cfg"]["diversity"]["sampling_depth_floor"])   # 除外検体の枠に書く（N.D. は「未検出」と読まれるため。260922 決定）
         st, top = _top_taxa(ra, G, top_n)
         colors = _taxa_colors(len(top))
         samples = sorted(list(ra.columns) + sorted(excl & set(G.label_by_newid.index)),
@@ -1400,7 +1400,7 @@ def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
                         fontsize=PS.FS_NOTE)   # 文字の下の余白（ディセンダ）の分だけ左に寄るので、ベースラインの中央でそろえる（260922）
         ax.set_xlim(-0.5, N - 0.5)
         ax.set_ylim(0, 100)
-        ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 本人決定）
+        ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 決定）
         ax.set_xticks([])
         ax.spines["bottom"].set_visible(False)
         ax.set_ylabel("Relative abundance (%)")
@@ -1418,7 +1418,7 @@ def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
             y -= 1.0
         for i, s in enumerate(samples):
             bx.text(i * LEAF_MM + LEAF_MM / 2, y, s, fontsize=PS.XLABEL_FS, rotation=PS.XLABEL_ROT, rotation_mode="anchor",
-                    ha="right", va="top")   # 検体名 45° (261022 本人決定。見切れてよい)
+                    ha="right", va="top")   # 検体名 45° (261022 決定。見切れてよい)
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
         matplotlib.pyplot.close(fig)
         _taxa_legend(_fig_dir(d, name) / f"{name}_legend.pdf", top + ["Others"], colors, log)
@@ -1431,10 +1431,10 @@ def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
         log(f"  {rank}: {N} 検体 (除外 {len(excl & set(samples))} は枠と「< {floor:,} reads」)/ 図の幅 {fig_w:.0f} mm")
 
 
-LETTER_MAX = 4         # #8 の有意差の文字の上限（8 pt で 4 文字 6.1 mm・マス 8 mm。261009 本人決定）
+LETTER_MAX = 4         # #8 の有意差の文字の上限（8 pt で 4 文字 6.1 mm・マス 8 mm。261009 決定）
 HEAT_ROW_MM = 4        # ヒートマップの 1 行（1 タクソン）の高さ。8 pt の名前が重ならない最小の目安
 HEAT_VMIN, HEAT_VMAX, HEAT_PSEUDO = -3, 0, 1e-6   # log10(相対存在量 + 1e-6)・範囲 −3〜0 (0.1〜100%)
-# 261016 本人決定 (E6d): 範囲を 0.1〜100% (log10 の割合で −3〜0) にし、カラーバーの目盛は % で書く。それまでは −5〜0 (0.001%〜) で目盛は log10。
+# 261016 決定 (E6d): 範囲を 0.1〜100% (log10 の割合で −3〜0) にし、カラーバーの目盛は % で書く。それまでは −5〜0 (0.001%〜) で目盛は log10。
 # 0.1% 未満のマスはいちばん暗い色になる (0 も含む)。#8・#11・#12 で共通。
 
 
@@ -1444,10 +1444,10 @@ def _pct_ticklabels() -> list[str]:
 
 
 def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#8 ヒートマップ・群平均 (階級ごとに 1 枚。260922 本人決定)。
+    """#8 ヒートマップ・群平均 (階級ごとに 1 枚。260922 決定)。
     行 = 上位 N タクソン (#7 と同じ選び方・同じ並び。1 位が一番上)・名前は右。列 = 群 (1 群 8 mm)・下に群の色の帯と名前 45°。
     値 = 群平均の相対存在量 (割合)を log10(x + 1e-6)・範囲 −3〜0 (0.1〜100%。261016)・viridis の 0〜95% (261009 に 0〜85% から変更。全図共通)。
-    有意差 (stats.method。#1・#3・#10 と同じ検定。261009 本人決定):
+    有意差 (stats.method。#1・#3・#10 と同じ検定。261009 決定):
       tukey   = マスに compact letter display (同じ文字を共有しない群どうしが p < 0.05)。1 マスの文字が LETTER_MAX を
                 超える属が 1 つでもあれば、その図の文字はすべて出さない (注記に残す)
       dunnett・welch = 対照群との比較で有意な群のマスに星 (welch も対照群が必要。無ければ作図の最初で止まる)
@@ -1471,7 +1471,7 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
         W, H = PS.MM_PER_GROUP, HEAT_ROW_MM
         ax_w, ax_h = W * len(order), H * len(top)
         name_w = max(PS.text_mm(t, PS.XLABEL_FS) for t in top) + 2
-        # カラーバーは行列の左。バーの左端を他の図の Y 軸の位置（左余白 15 mm）に合わせ、目盛と見出しは左余白の中に置く（260923 本人決定）
+        # カラーバーは行列の左。バーの左端を他の図の Y 軸の位置（左余白 15 mm）に合わせ、目盛と見出しは左余白の中に置く（260923 決定）
         cb_w, cb_gap = 3, 3
         left = PS.MARGIN_L + cb_w + cb_gap
         fig_w = left + ax_w + name_w + PS.MARGIN_R
@@ -1525,23 +1525,23 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
         bx, y = _bottom_band(fig, fig_w, fig_h, ax_w, W, [G.color[g] for g in order], not G.no_color)
         bx.set_position([left / fig_w, 0, ax_w / fig_w, PS.MARGIN_B / fig_h])
         shown = [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order
-        for g in skipped_cols:                         # 検定から外した群は帯の中に「n < 3」（261009 本人決定）
+        for g in skipped_cols:                         # 検定から外した群は帯の中に「n < 3」（261009 決定）
             _band_note(bx, y, W, order.index(g), "white" if G.no_color else G.color[g], f"n < {G.min_n}")
         for i, lab in enumerate(shown):
             bx.text(i * W + W / 2 + 1.0, y - 1.0, lab, fontsize=PS.XLABEL_FS, rotation=PS.XLABEL_ROT,
                     ha="right", va="top", rotation_mode="anchor")
         over = [(x, h) for x in shown if (h := PS.rotated_label_mm(x) + BAND_GAP_MM + BAND_MM + 1.0) > PS.MARGIN_B]
-        if over:                                           # 名前が下余白に収まらないとき（260924 本人指示）
+        if over:                                           # 名前が下余白に収まらないとき（260924 指示）
             log(f"  [注意] 群名が長く、下余白 {PS.MARGIN_B} mm で見切れている可能性があります (群名を短くしてください): "
                 + ", ".join(f"{x} (約 {h:.1f} mm)" for x, h in over))
         cb_len = min(PS.PLOT_H_MM, ax_h)          # 長さは軸高 48 mm に固定・上端を行列の上端にそろえる（規約 260929。低い行列ではその高さ）
-        ext = cb_len * 0.05                           # 下端の三角 (既定の長さ = 本体の 5%) は本体の下に足す。本体は 48 mm で行列の上下の端にそろえる (261019 本人決定・案 b)
+        ext = cb_len * 0.05                           # 下端の三角 (既定の長さ = 本体の 5%) は本体の下に足す。本体は 48 mm で行列の上下の端にそろえる (261019 決定・案 b)
         cax = fig.add_axes([PS.MARGIN_L / fig_w, (PS.MARGIN_B + ax_h - cb_len - ext) / fig_h, cb_w / fig_w, (cb_len + ext) / fig_h])
-        cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax, extend="min")   # 下端の三角 = 0.1% 未満 (0 を含む) もこの色 (261016 本人決定)
+        cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax, extend="min")   # 下端の三角 = 0.1% 未満 (0 を含む) もこの色 (261016 決定)
         cax.yaxis.set_ticks_position("left")
         cax.yaxis.set_label_position("left")
         cb.outline.set_visible(False)
-        cb.set_label("Relative abundance (%)", fontsize=PS.FS_CBAR)   # 目盛は % (261016 本人決定・E6d)
+        cb.set_label("Relative abundance (%)", fontsize=PS.FS_CBAR)   # 目盛は % (261016 決定・E6d)
         cb.ax.tick_params(labelsize=PS.FS_CBAR, length=2)
         cb.set_ticks(range(HEAT_VMIN, HEAT_VMAX + 1))
         cb.set_ticklabels(_pct_ticklabels())
@@ -1562,9 +1562,9 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
                if G.method == "tukey" else f"星 = 対照群 {control} との比較 ({G.method})・p < 0.05 {nsig} / {n_tested}"))
 
 
-# ---------------- #9 ベン図 / UpSet（260922 本人決定） ----------------
+# ---------------- #9 ベン図 / UpSet（260922 決定） ----------------
 VENN_AX_MM = PS.SCATTER_AX_MM   # ベン図の軸（散布図と同じ 48 × 48 mm）
-UPSET_CELL_MM = 8      # UpSet の点の行列: 格子 8 × 8 mm（1 群 8 mm にそろえる。260923 本人決定・旧 4 mm）
+UPSET_CELL_MM = 8      # UpSet の点の行列: 格子 8 × 8 mm（1 群 8 mm にそろえる。260923 決定・旧 4 mm）
 UPSET_DOT_S, UPSET_LINE_LW = 60, 1.2   # 点の面積・つなぐ線の太さ（9 パターンから選択。260923）
 UPSET_GAP_MM, UPSET_NUM_MM = 2, 4      # 行列と棒のあいだ・棒の先の数の分
 # 4 群のベン図は楕円（中心 x, y・幅・高さ・角度。0〜1 の座標）。2・3 群は円
@@ -1579,7 +1579,7 @@ VENN_SHAPES = {
 
 
 def _presence(ra: pd.DataFrame, G) -> pd.DataFrame:
-    """タクソン × 群の有無。「その群にいる」= 群の**全検体**で 1 リード以上 (260922 本人決定)。"""
+    """タクソン × 群の有無。「その群にいる」= 群の**全検体**で 1 リード以上 (260922 決定)。"""
     grp = ra.columns.map(G.label_by_newid)
     order = [g for g in G.order if (grp == g).any()]
     return pd.DataFrame({g: (ra.loc[:, grp == g] > 0).all(axis=1) for g in order})
@@ -1628,7 +1628,7 @@ def _draw_venn(path: Path, P: pd.DataFrame, G, title: str) -> None:
 
 
 def _draw_upset(path: Path, P: pd.DataFrame, G, title: str, shown: list[str]) -> list[tuple]:
-    """UpSet (260923 本人決定): 左 = 点の行列 (列 = 群・行 = 重なり・格子 8 × 8 mm)、右 = 重なりごとの数の横棒 (長さ 46 mm)。
+    """UpSet (260923 決定): 左 = 点の行列 (列 = 群・行 = 重なり・格子 8 × 8 mm)、右 = 重なりごとの数の横棒 (長さ 46 mm)。
     行列の下に横軸を置き、群の位置に目盛・その下に群名 45° (群の図と同じ)。棒には縦軸の線を入れる。
     点 = 面積 60・つなぐ線 = 1.2 pt (9 パターンを見比べて決定)。重なりは数の多い順にすべて出す。"""
     order = list(P.columns)
@@ -1660,7 +1660,7 @@ def _draw_upset(path: Path, P: pd.DataFrame, G, title: str, shown: list[str]) ->
     bx.barh(range(C), counts.to_numpy(), 0.6, color=PS.GREY, lw=0)
     for j, v in enumerate(counts.to_numpy()):
         bx.text(v, j, f" {v}", va="center", fontsize=PS.FS_NOTE)
-    PS.fixed_ticks(bx, 0, float(counts.max()), axis="x")   # 目盛 5 個（260924 本人決定）
+    PS.fixed_ticks(bx, 0, float(counts.max()), axis="x")   # 目盛 5 個（260924 決定）
     bx.set_ylim(C - 0.5, -0.5)
     bx.set_yticks([])
     for sp in ("top", "right"):
@@ -1672,7 +1672,7 @@ def _draw_upset(path: Path, P: pd.DataFrame, G, title: str, shown: list[str]) ->
 
 
 def fig11_venn_upset(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#9 ベン図・UpSet (階級ごと。260922 本人決定)。
+    """#9 ベン図・UpSet (階級ごと。260922 決定)。
     「その群にいる」= 群の全検体で 1 リード以上。除外検体は入れない。名前はアーカイブと同じ整形。
     ベン図は 2〜5 群のときだけ (6 群以上は描かない。VENN_SHAPES の形がある群の数まで)。UpSet は群の数によらず描く。"""
     import matplotlib.ticker  # noqa: F401
@@ -1696,7 +1696,7 @@ def fig11_venn_upset(ctx: dict, G, d: Path, n: int, total: int) -> None:
         else:                                          # どの群の全検体にもいる属が無い (261019・F217)
             combos = []
             log(f"  [注記] {rank}: どの群の全検体にもいるタクソンが無いため、UpSet は描きません")
-        _warn_labels(log, shown)                           # UpSet の群名が下余白に収まらないとき（260925 本人指示）
+        _warn_labels(log, shown)                           # UpSet の群名が下余白に収まらないとき（260925 指示）
         cd = _csv_dir(d, f"09_venn-upset_{rank}")
         key = P.apply(lambda r: tuple(r.to_numpy()), axis=1)
         rows = [dict(groups=" & ".join(g for g, b in zip(order, cb) if b), n_taxa=c,
@@ -1717,7 +1717,7 @@ def _safe_name(s: str) -> str:
 def _taxon_bar_axis(ax, need: float) -> float:
     """#10 の縦軸。上端 = need 以上の決まった段 (TAXON_BAR_TOPS)・目盛 5 個。
     100 を超えるとき (平均 + SD やブラケット) は 25 刻みの次の段 (125・150 …) まで伸ばし、目盛は 0〜100 だけ
-    (100 を超える数値は出さない。261016 E9a・261020 本人決定)。返り値: 上端。"""
+    (100 を超える数値は出さない。261016 E9a・261020 決定)。返り値: 上端。"""
     if need > 100:
         top = 100 + 25 * math.ceil((need - 100) / 25)
         ticks = [100 * k / PS.TICK_N for k in range(PS.TICK_N + 1)]
@@ -1730,10 +1730,10 @@ def _taxon_bar_axis(ax, need: float) -> float:
 
 
 def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#10 タクソン別の相対存在量の棒 (タクソンごとに 1 枚・表の全列。260923 本人決定)。
+    """#10 タクソン別の相対存在量の棒 (タクソンごとに 1 枚・表の全列。260923 決定)。
     棒 = 群平均 (群の色)・SD のエラーバー・検体の点 (#1・#3 と同じ描き方の棒版)。
     縦軸 = Relative abundance (%)。検定は stats.method (タクソンごと。タクソンのあいだは補正しない)。
-    use_subgroup: true でも描く (本人指示)。"""
+    use_subgroup: true でも描く (指示)。"""
     log = ctx["log"]
     _, ranks = _plot_cfg(ctx)
     for k, rank in enumerate(ranks, 1):
@@ -1742,7 +1742,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
         grp = ra.columns.map(G.label_by_newid)
         order = [g for g in G.order if (grp == g).any()]
         zero = set(ra.index[(ra[[c for c, g in zip(ra.columns, grp) if g in order]] == 0).all(axis=1)])
-        taxa = [t for t in ra.index if t not in zero]   # 残った検体ですべて 0 の属は描かない (261020 本人決定・b)
+        taxa = [t for t in ra.index if t not in zero]   # 残った検体ですべて 0 の属は描かない (261020 決定・b)
         fname, seen = {}, {}                           # ファイル名が重なったら -2, -3 … を付ける (Mac は大文字小文字を区別しない。261019・F218)
         for t in taxa:
             base = f"{name}_{_safe_name(t)}"
@@ -1753,7 +1753,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
                  f"{name}_<タクソン>.pdf ({len(taxa)} 枚)")
         if zero:
             log(f"  [注記] {rank}: 残った検体ですべて 0 の属 {len(zero)} 個は描きませんでした (stats.csv には not_tested・全検体で 0 と書きます)")
-        _warn_labels(log, [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order)   # 階級ごとに 1 回（260925 本人指示）
+        _warn_labels(log, [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order)   # 階級ごとに 1 回（260925 指示）
         sub = _csv_dir(d, name)                          # CSV は他の図と同じ「taxon-bar」
         pdfs = _fig_dir(d, name)                        # PDF（X01 で 1,027 枚）は 10_taxon-bar/ の直下
         rows, stat_rows, n_sig = [], [], 0
@@ -1764,7 +1764,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             x = np.arange(len(order))
             means = np.array([v.mean() if len(v) else np.nan for v in data])
             sds = np.array([v.std(ddof=1) if len(v) > 1 else np.nan for v in data])   # n < 2 は SD を出さない (261020・F011・F259。#1・#3 と同じ)
-            # 前後は 棒（一番後ろ）→ 点 → エラーバー（一番前）。棒は群の色を薄く、点は群の色（260924 本人決定・案 A）
+            # 前後は 棒（一番後ろ）→ 点 → エラーバー（一番前）。棒は群の色を薄く、点は群の色（260924 決定・案 A）
             ax.bar(x, means, BAR_FRAC, color=[(*matplotlib.colors.to_rgb(G.color[g]), BAR_ALPHA) for g in order],
                    lw=0, zorder=1)
             rng = np.random.default_rng(PS.JITTER_SEED)
@@ -1778,7 +1778,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             hi = _taxon_bar_axis(ax, hi)
             ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
             hb = _draw_significance(ax, G, res, {i: i for i in range(len(order))}, data, 0, hi, order)
-            if hb > hi:                                # ブラケットが入りきらなければ次の段へ上げる (261020 本人決定・F242/F184)
+            if hb > hi:                                # ブラケットが入りきらなければ次の段へ上げる (261020 決定・F242/F184)
                 _taxon_bar_axis(ax, hb)
                 PS.keep_brackets(ax)                   # ブラケットは描いたときの見た目のまま (B2-3 と同じ)
             ax.set_xlim(-0.5, len(order) - 0.5)
@@ -1820,11 +1820,11 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             f" ({G.method}・タクソンのあいだの補正なし) / 除外検体 {len(excl)} は入れない")
 
 
-# ---------------- #11 ANCOM-BC バブルプロット（260924 本人決定・README #11） ----------------
-# 261018 本人決定: 計算を ANCOM-BC (scikit-bio) から ANCOM-BC2 (R ANCOMBC・Dunnett 型) へ移した (BC2 実装手順書・lib/ancombc2.R)。
+# ---------------- #11 ANCOM-BC バブルプロット（260924 決定・README #11） ----------------
+# 261018 決定: 計算を ANCOM-BC (scikit-bio) から ANCOM-BC2 (R ANCOMBC・Dunnett 型) へ移した (BC2 実装手順書・lib/ancombc2.R)。
 # 設定は lib/ancombc2.R に固定 (pseudo 0・struc_zero TRUE / neg_lb FALSE・BH・mdFDR holm / B 1000・prv_cut 0)
-ANCOM_PRV = 0.0        # 出現率で外さない (261018 本人決定・既定 0.10 から変更。群の大きさが違う設計で小さい群に偏るため)
-ANCOM_SEED = 0         # mdFDR の乱数の種 (パイプラインのほかの種とそろえる。261018 本人決定)
+ANCOM_PRV = 0.0        # 出現率で外さない (261018 決定・既定 0.10 から変更。群の大きさが違う設計で小さい群に偏るため)
+ANCOM_SEED = 0         # mdFDR の乱数の種 (パイプラインのほかの種とそろえる。261018 決定)
 ANCOM_B = 1000         # mdFDR の乱数の回数 (lib/ancombc2.R と同じ値。記録用)
 ANCOM_SIZES = [(0.001, "q ≤ 0.001", 70), (0.01, "0.001 < q ≤ 0.01", 38), (0.05, "0.01 < q ≤ 0.05", 16)]
 ANCOM_NS_S = 4         # 有意でない点（灰色の小さな点）
@@ -1832,7 +1832,7 @@ BURD = ["#2166AC", "#4393C3", "#92C5DE", "#D1E5F0", "#F7F7F7", "#FDDBC7", "#F4A5
 
 
 def _ancom_control(ctx: dict, G) -> str | None:
-    c = PC._control_written(ctx["cfg"])                   # control_group だけ (composite は廃止。261021 本人決定)
+    c = PC._control_written(ctx["cfg"])                   # control_group だけ (composite は廃止。261021 決定)
     if c and c not in G.order:
         raise PC.Stop(f"対照群 '{c}' がデータの群にありません。存在する群: {G.order}")
     return c
@@ -1840,13 +1840,13 @@ def _ancom_control(ctx: dict, G) -> str | None:
 
 def _ancom_run(ctx: dict, G, rank: str, control: str):
     """ANCOM-BC2 の計算 (#11 と #12 で共通。1 回の実行の中では階級ごとに 1 回だけ計算して使い回す)。
-    R ANCOMBC の ancombc2 (Dunnett 型) を lib/ancombc2.R で呼ぶ (261018 本人決定)。
+    R ANCOMBC の ancombc2 (Dunnett 型) を lib/ancombc2.R で呼ぶ (261018 決定)。
     返り値: (結果の表 [taxon, group, ln_fc, SE, W, pvalue, qvalue, diff, passed_ss, sig, struc_zero, zero_in_control,
             zero_in_group, not_tested], 比較する群, 全タクソン数, 検定したタクソン数, n < stats.min_n で外した群 {群: n})。
     sig = diff_robust (疑似カウントの感度解析をすべて通った有意。図の有意はこれだけで決める)。
     構造的ゼロ (片方の群で全検体 0) の組は検定しない。どれか 1 群でも構造的ゼロの属は、ほかの比較も検定されない
-    (ANCOM-BC2 の設計どおり。U7 本人決定 B1)。その組は not_tested = True (図では空欄)。
-    対照群が n < min_n なら None (261009 本人決定・D2e)"""
+    (ANCOM-BC2 の設計どおり。U7 決定 B1)。その組は not_tested = True (図では空欄)。
+    対照群が n < min_n なら None (261009 決定・D2e)"""
     import subprocess
     import tempfile
     cache = ctx.setdefault("_ancom_cache", {})
@@ -1859,7 +1859,7 @@ def _ancom_run(ctx: dict, G, rank: str, control: str):
     X = t[[c for c in t.columns if c not in excl]].T
     n_all = X.shape[1]
     counts = X.index.map(G.label_by_newid).value_counts()
-    # 1 ≤ n < min_n の群は計算から外し、列は残して「n < 3」。n = 0 の群は列も出さない (261020 本人決定)
+    # 1 ≤ n < min_n の群は計算から外し、列は残して「n < 3」。n = 0 の群は列も出さない (261020 決定)
     small = {g: int(counts.get(g, 0)) for g in G.order if 0 < counts.get(g, 0) < G.min_n}
     if counts.get(control, 0) < G.min_n:               # 対照群が足りなければ計算しない
         cache[(rank, control)] = None
@@ -1868,7 +1868,7 @@ def _ancom_run(ctx: dict, G, rank: str, control: str):
     nz = (X > 0).sum()
     X = X.loc[:, (nz > 0) & (nz >= ANCOM_PRV * len(X))]      # 全検体 0 の属は外す (prv_cut 0 でも)
     groups = [g for g in G.order if g in set(X.index.map(G.label_by_newid))]
-    # 各群ちょうど 1 検体ずつだけに出る属は、0 でない検体数 = 群の数で自由度 0 になり、R が p = 1 (差なし)にする (261020 本人決定・b)。
+    # 各群ちょうど 1 検体ずつだけに出る属は、0 でない検体数 = 群の数で自由度 0 になり、R が p = 1 (差なし)にする (261020 決定・b)。
     # そのとき R が出す NaN・NA・max の警告は、この注記に置き換える
     gi = X.index.map(G.label_by_newid)
     nz_g = (X > 0).groupby(gi).sum()
@@ -1893,7 +1893,7 @@ def _ancom_run(ctx: dict, G, rank: str, control: str):
         warns = [w for w in warns if not any(k in w for k in noise)]
     if len(groups) == 2:                               # 2 群では ANCOMBC が必ずこの 2 行を出す (主解析を使うので想定どおり。261020)
         warns = [w for w in warns if "< 3 categories" not in w and "will be deactivated" not in w]
-    for w in warns:                                    # 収束しないなどの R の警告は残す (261018 本人決定・O7)
+    for w in warns:                                    # 収束しないなどの R の警告は残す (261018 決定・O7)
         log(f"  [注意] {rank}: ANCOM-BC2 (R) の警告: {w}")
     zero = {g: zi[f"structural_zero (grp = {code[g]})"].astype(bool) for g in groups}
     comps = [g for g in groups if g != control]
@@ -1921,7 +1921,7 @@ def _ancom_run(ctx: dict, G, rank: str, control: str):
 
 def _ancom_draw(G, d: Path, name: str, rank: str, res, comps: list, small: dict, control: str, rows: list,
                 base_mean, log):
-    """#11・#12 共通の描画 (261009 本人決定: #11 にも対照群の平均相対存在量の列を入れる。#12 と同じ形)。
+    """#11・#12 共通の描画 (261009 決定: #11 にも対照群の平均相対存在量の列を入れる。#12 と同じ形)。
     列 = 群の並びどおり (対照群の列 = 存在量、他 = バブル)。返り値: (図の幅, 図の高さ, 載せた行の結果)"""
     from matplotlib.colors import LinearSegmentedColormap, Normalize
     cmap_fc = LinearSegmentedColormap.from_list("BuRd", BURD)
@@ -1933,7 +1933,7 @@ def _ancom_draw(G, d: Path, name: str, rank: str, res, comps: list, small: dict,
     A = np.log10(base_mean.reindex(rows).fillna(0).to_numpy() + HEAT_PSEUDO)
 
     W, H = PS.MM_PER_GROUP, HEAT_ROW_MM
-    cols = [g for g in G.order if g == control or g in comps or g in small]   # 計算から外した群も列は残す（261009）   # 対照群の列は群の並び (group_order) どおりの位置（261007 本人決定・案 B）
+    cols = [g for g in G.order if g == control or g in comps or g in small]   # 計算から外した群も列は残す（261009）   # 対照群の列は群の並び (group_order) どおりの位置（261007 決定・案 B）
     jc = cols.index(control)
     ax_w, ax_h = W * len(cols), H * len(rows)
     name_w = max(PS.text_mm(tx, PS.XLABEL_FS) for tx in rows) + 2
@@ -1955,7 +1955,7 @@ def _ancom_draw(G, d: Path, name: str, rank: str, res, comps: list, small: dict,
         ax.add_patch(Rectangle((jc - 0.5, i - 0.5), 1, 1, fc=cmap_ab(norm_ab(A[i])), lw=0, zorder=1))   # 対照群の存在量
         v = vals[i]
         ax.text(jc, i, f"{v:.1f}" if v >= 0.1 else ("<0.1" if v > 0 else "0"), ha="center", va="center",
-                fontsize=PS.FS_CELL, color="white", zorder=3)     # 値 (%)・文字は白（261007 本人指示）
+                fontsize=PS.FS_CELL, color="white", zorder=3)     # 値 (%)・文字は白（261007 指示）
         for g in comps:
             j = cols.index(g)
             q, v = Q.loc[tx, g], L.loc[tx, g]
@@ -1997,17 +1997,17 @@ def _ancom_draw(G, d: Path, name: str, rank: str, res, comps: list, small: dict,
     for x0, norm, cmap, label, ticks in ((PS.MARGIN_L, norm_ab, cmap_ab, "Relative abundance (%)",
                                           range(HEAT_VMIN, HEAT_VMAX + 1)),
                                          (cb2_x, norm_fc, cmap_fc, "Log fold change", [-vmax, -step, 0, step, vmax])):
-        ext = cb_len * 0.05 if x0 == PS.MARGIN_L else 0.0   # 存在量のバーだけ、三角を本体の下に足す (261019 本人決定・案 b)
+        ext = cb_len * 0.05 if x0 == PS.MARGIN_L else 0.0   # 存在量のバーだけ、三角を本体の下に足す (261019 決定・案 b)
         cax = fig.add_axes([x0 / fig_w, (PS.MARGIN_B + ax_h - cb_len - ext) / fig_h, cb_w / fig_w, (cb_len + ext) / fig_h])
         cb = fig.colorbar(matplotlib.cm.ScalarMappable(norm=norm, cmap=cmap), cax=cax,
-                          extend="min" if x0 == PS.MARGIN_L else "neither")   # 存在量だけ下端に三角 (261016 本人決定)
+                          extend="min" if x0 == PS.MARGIN_L else "neither")   # 存在量だけ下端に三角 (261016 決定)
         cax.yaxis.set_ticks_position("left")
         cax.yaxis.set_label_position("left")
         cb.outline.set_visible(False)
         cb.set_label(label, fontsize=PS.FS_CBAR)
         cb.ax.tick_params(labelsize=PS.FS_CBAR, length=2)
         cb.set_ticks(list(ticks))
-        if x0 == PS.MARGIN_L:                     # 存在量の目盛は % (261016 本人決定・E6d)
+        if x0 == PS.MARGIN_L:                     # 存在量の目盛は % (261016 決定・E6d)
             cb.set_ticklabels(_pct_ticklabels())
     fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
     matplotlib.pyplot.close(fig)
@@ -2034,16 +2034,16 @@ def fig13_ancombc(ctx: dict, G, d: Path, n: int, total: int) -> None:
         name = f"11_ancombc_{rank}"
         log.step("10", n, total, False, f"#11 ANCOM-BC ({k}/{len(ranks)})", f"{name}.pdf")
         run_ = _ancom_run(ctx, G, rank, control)
-        if run_ is None:                               # 対照群が n < stats.min_n（261009 本人決定・D2e）
+        if run_ is None:                               # 対照群が n < stats.min_n（261009 決定・D2e）
             log(f"  [注意] {rank}: 対照群 {control} の検体数が stats.min_n ({G.min_n}) 未満のため、#11 は描きません")
             continue
         res, comps, n_all, n_test, small = run_
-        # 計算から外した群（n < stats.min_n）も列としては残し、帯の中に「n < 3」と書く（261009 本人決定）
+        # 計算から外した群（n < stats.min_n）も列としては残し、帯の中に「n < 3」と書く（261009 決定）
         pcomps = [g for g in G.order if g != control and (g in comps or g in small)]
         if small and k == 1:
             log(f"  [注記] n < {G.min_n} のため ANCOM-BC の計算から外した群があります (列は残し、帯に n < {G.min_n} と書きます): "
                 + ", ".join(f"{g} (n = {m})" for g, m in small.items()))
-        # 載せるタクソン = 比較から交互に 1 つずつ、|ln fold change| の大きい順に、全体で top_n 個（260924 本人決定・案 B）。
+        # 載せるタクソン = 比較から交互に 1 つずつ、|ln fold change| の大きい順に、全体で top_n 個（260924 決定・案 B）。
         # 行数を決まった数（X01 は 12 = 軸高 48 mm ÷ 4 mm）にして、図の高さを他の図とそろえる。all なら有意の属を全部 (261021)
         queue = {}
         for g in comps:
@@ -2061,7 +2061,7 @@ def fig13_ancombc(ctx: dict, G, d: Path, n: int, total: int) -> None:
         sub = res[res.taxon.isin(pick)]
         L = sub.pivot(index="taxon", columns="group", values="ln_fc").reindex(columns=pcomps)
         Q = sub.pivot(index="taxon", columns="group", values="qvalue").reindex(columns=pcomps)
-        rows = []                                          # 選ばれた比較ごとにまとめ、その中は増加 → 減少（260924 本人指示）
+        rows = []                                          # 選ばれた比較ごとにまとめ、その中は増加 → 減少（260924 指示）
         for g in comps:
             mem = [tx for tx in L.index if chosen_by[tx] == g]
             up = sorted([tx for tx in mem if L.loc[tx, g] > 0], key=lambda tx: -L.loc[tx, g])
@@ -2087,7 +2087,7 @@ def fig13_ancombc(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
 
 def fig14_ancombc_summary(ctx: dict, G, d: Path, n: int, total: int) -> None:
-    """#12 ANCOM-BC まとめ (階級ごとに 1 枚。261007 本人追加)。#11 と同じ ANCOM-BC2 の結果に、対照群での存在量を 1 列のヒートマップで足す。
+    """#12 ANCOM-BC まとめ (階級ごとに 1 枚。261007 追加)。#11 と同じ ANCOM-BC2 の結果に、対照群での存在量を 1 列のヒートマップで足す。
     載せるタクソン = どれかの比較で有意 (diff_robust) のもの。上から対照群の平均相対存在量の多い順に、ancombc_summary_top_n 個。
     左から: 存在量のカラーバー / ln fold change のカラーバー / バブル (列 = 対照群 vs 各群。#11 と同じ描き方)/
     対照群の平均相対存在量 1 列 (log10(x + 1e-6)・範囲 −3〜0・viridis の 0〜95%。#8 と同じ目盛り)/ タクソン名。"""
@@ -2100,7 +2100,7 @@ def fig14_ancombc_summary(ctx: dict, G, d: Path, n: int, total: int) -> None:
         return
     _, ranks = _plot_cfg(ctx)
     raw_n = cfg["plotting"]["ancombc_summary_top_n"]
-    top_n = _top_n_or_all(ctx, "ancombc_summary_top_n")   # all = 有意 (diff_robust) のタクソンを全部載せる（261007 本人追加）
+    top_n = _top_n_or_all(ctx, "ancombc_summary_top_n")   # all = 有意 (diff_robust) のタクソンを全部載せる（261007 追加）
     top_n = None if top_n == math.inf else top_n
     cmap_fc = LinearSegmentedColormap.from_list("BuRd", BURD)
     cmap_ab = PS.viridis()                             # #8 と同じ（viridis の 0〜95%）
@@ -2109,7 +2109,7 @@ def fig14_ancombc_summary(ctx: dict, G, d: Path, n: int, total: int) -> None:
         name = f"12_ancombc-summary_{rank}"
         log.step("10", n, total, False, f"#12 ANCOM-BC まとめ ({k}/{len(ranks)})", f"{name}.pdf")
         run_ = _ancom_run(ctx, G, rank, control)
-        if run_ is None:                               # 対照群が n < stats.min_n（261009 本人決定・D2e）
+        if run_ is None:                               # 対照群が n < stats.min_n（261009 決定・D2e）
             log(f"  [注意] {rank}: 対照群 {control} の検体数が stats.min_n ({G.min_n}) 未満のため、#12 は描きません")
             continue
         res, comps, n_all, n_test, small = run_
@@ -2125,13 +2125,13 @@ def fig14_ancombc_summary(ctx: dict, G, d: Path, n: int, total: int) -> None:
         if not sig:
             log(f"  [注記] {rank}: 有意 (diff_robust) のタクソンが無いため、図は描きません")
             continue
-        rows = sorted(sig, key=lambda tx: -base_mean.get(tx, 0.0))[:top_n]  # 対照群で多い順（261007 本人決定）。None = all
+        rows = sorted(sig, key=lambda tx: -base_mean.get(tx, 0.0))[:top_n]  # 対照群で多い順（261007 決定）。None = all
         fig_w, fig_h, sub = _ancom_draw(G, d, name, rank, res, comps, small, control, rows, base_mean, log)
         sub.merge((base_mean * 100).rename(f"mean_relative_abundance_{control}").rename_axis("taxon").reset_index(), on="taxon") \
             .to_csv(cd / f"{name}.plotted.csv", index=False)
         log(f"  {rank}: 有意 (diff_robust) のタクソン {len(sig)} 個 (検定 {n_test} / {n_all})のうち、{control} で多い順に "
             f"{len(rows)} 行 (ancombc_summary_top_n = {raw_n})/ 図 {fig_w:.0f} × {fig_h:.0f} mm")
-        # 増加・減少の内訳（261009 本人決定・D9 a）: 対照群で多い属から選ぶので、絞ると主に減少が載る
+        # 増加・減少の内訳（261009 決定・D9 a）: 対照群で多い属から選ぶので、絞ると主に減少が載る
         hit = res[res.sig & ~res.struc_zero]
         shown = hit[hit.taxon.isin(rows)]
         cnt = {"scope": ["all_significant", "plotted"], "taxa": [len(sig), len(rows)],
@@ -2153,7 +2153,7 @@ def _ancom_method_text(ctx: dict) -> str:
 def _ancom_all_csv(res, control: str, path: Path) -> None:
     """全タクソン × 比較の結果 (261018: BC2 の列に変更)。"""
     v = res.attrs.get("ancombc_version", "")
-    two = res.group.nunique() == 1                      # 2 群のときは主解析 (mdFDR なし。261020 本人決定)
+    two = res.group.nunique() == 1                      # 2 群のときは主解析 (mdFDR なし。261020 決定)
     res.assign(control=control, log_base="natural (ln)",
                method="ANCOM-BC2 primary (R ANCOMBC)" if two else "ANCOM-BC2 Dunnett (R ANCOMBC)", ancombc_version=v,
                pseudo=0, sensitivity="0.1, 0.5, 1", p_adjust="BH", mdfdr="none" if two else f"holm (B = {ANCOM_B})", prv_cut=ANCOM_PRV,
@@ -2165,8 +2165,8 @@ def _ancom_all_csv(res, control: str, path: Path) -> None:
 
 def _struc_mark(ax, x, y, r) -> None:
     """構造的ゼロの組の印 (261009・D5a。検定はせず、片方の群で検出されないことを示す)。
-    白抜きの円: 比べる群で未検出 = 減少の色 (BuRd の青端)、対照群で未検出 = 増加の色 (赤端)、両方 = 灰色 (261009 本人決定・案 ②)。
-    構造的ゼロの属は #11・#12 の行の候補にしない (261009 本人決定・案 a。q が擬似カウントで決まるため)。"""
+    白抜きの円: 比べる群で未検出 = 減少の色 (BuRd の青端)、対照群で未検出 = 増加の色 (赤端)、両方 = 灰色 (261009 決定・案 ②)。
+    構造的ゼロの属は #11・#12 の行の候補にしない (261009 決定・案 a。q が擬似カウントで決まるため)。"""
     c = "#BBBBBB" if (r.zero_in_group and r.zero_in_control) else (BURD[0] if r.zero_in_group else BURD[-1])
     ax.scatter(x, y, s=ANCOM_SIZES[1][2], facecolors="none", edgecolors=c, linewidths=1.0, zorder=2)
 
@@ -2178,7 +2178,7 @@ def _ancom_legend(path: Path) -> None:
     h = [Line2D([], [], ls="", marker="o", ms=np.sqrt(sz), markerfacecolor="#BBBBBB", markeredgecolor=PS.GREY,
                 markeredgewidth=0.3, label=lab) for _, lab, sz in ANCOM_SIZES]
     h.append(Line2D([], [], ls="", marker="o", ms=np.sqrt(ANCOM_NS_S), color="#BBBBBB", label="n.s."))
-    # 構造的ゼロの白抜きの見本は載せない (261019 本人決定・案 a。ANCOM-BC2 ではどれか 1 群でも構造的ゼロの属は検定されず
+    # 構造的ゼロの白抜きの見本は載せない (261019 決定・案 a。ANCOM-BC2 ではどれか 1 群でも構造的ゼロの属は検定されず
     # 行に選ばれないので、図に白抜きは出ない。描く処理 _struc_mark は念のため残す)
     fig = matplotlib.pyplot.figure(figsize=(60 * PS.MM, fig_h * PS.MM))
     lg = fig.legend(handles=h, fontsize=PS.FS_LEGEND, frameon=False, loc="upper left", title="q (mdFDR)",

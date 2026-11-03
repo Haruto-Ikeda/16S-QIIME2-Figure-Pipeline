@@ -18,15 +18,15 @@ from pathlib import Path  # noqa: E402
 
 MM = 1 / 25.4
 GREY = "#222222"
-PLOT_H_MM = 48                 # 軸高（全図共通。260923 本人決定: 46 → 48 mm。上位 12 タクソン × 4 mm = 48 mm でヒートマップとそろう）
-# 文字の大きさ（260921 本人決定・規約 Skills/figure-plotting §3）: 軸ラベル 8・目盛 8・星 9・群名 8・タイトル 9・凡例 8・カラーバー 8・注記 7・マスの中 8
+PLOT_H_MM = 48                 # 軸高（全図共通。260923 決定: 46 → 48 mm。上位 12 タクソン × 4 mm = 48 mm でヒートマップとそろう）
+# 文字の大きさ（260921 決定・規約 Skills/figure-plotting §3）: 軸ラベル 8・目盛 8・星 9・群名 8・タイトル 9・凡例 8・カラーバー 8・注記 7・マスの中 8
 FS_TICK, FS_LABEL, FS_STAR, FS_NOTE = 8, 8, 9, 7
 FS_LEGEND, FS_CBAR, FS_CELL = 8, 8, 8     # 注記 7・カラーバー 8（260923 に 7 → 8: 軸ラベル・目盛と同じ）・行列のマスの中 8
-# 余白は全図で固定（260921 本人決定・規約全体）: 左 15・右 4・上 13・下 20 mm（上は 260923 に 5 → 13: #10 の長いタクソン名を 3 行まで折り返して収めるため。下は 260921 に 15 → 20）。凡例は図に入れず別ファイルに出す
+# 余白は全図で固定（260921 決定・規約全体）: 左 15・右 4・上 13・下 20 mm（上は 260923 に 5 → 13: #10 の長いタクソン名を 3 行まで折り返して収めるため。下は 260921 に 15 → 20）。凡例は図に入れず別ファイルに出す
 MARGIN_L, MARGIN_R, MARGIN_T, MARGIN_B = 15, 4, 13, 20
-# 横軸は「目盛 1 つあたりの幅」を固定（260921 本人決定・確定。規約 Skills/figure-plotting §3）
+# 横軸は「目盛 1 つあたりの幅」を固定（260921 決定・確定。規約 Skills/figure-plotting §3）
 MM_PER_GROUP = 8              # 群の図: 1 群 = 8 mm。群名は 45° に傾ける
-READS_PER_UNIT, MM_PER_UNIT = 5000, 16  # #2 の横軸: 5,000 リード = 16 mm・目盛は 5,000 刻み（260929 本人決定で 2,000 リード 8 mm から変更。目盛を少なくするため）
+READS_PER_UNIT, MM_PER_UNIT = 5000, 16  # #2 の横軸: 5,000 リード = 16 mm・目盛は 5,000 刻み（260929 決定で 2,000 リード 8 mm から変更。目盛を少なくするため）
 XLABEL_ROT = 45
 XLABEL_FS = 8
 STAR_PAD_PT = -4.0             # 星と横棒の隙間（plot_summary と同じ）
@@ -96,7 +96,7 @@ def draw_brackets(ax, xpos: dict, sig_pairs: list, data_top: float, lo: float, h
     """有意ペアのブラケットを data_top より上に積む。収まらなければ上端を伸ばして返す。
     (Scripts/figure/plot_summary.py の draw_brackets と同じ描き方)
     要素は (a, b, 文字) か (a, b, 文字, 線を引くか)。線を引かない要素は「n < 3」など検定しなかった印で、
-    文字だけをブラケットと同じ段の高さに書く (a == b なら群の真上。261009 本人決定)。"""
+    文字だけをブラケットと同じ段の高さに書く (a == b なら群の真上。261009 決定)。"""
     if not sig_pairs:
         return hi
     n = len(sig_pairs)
@@ -139,7 +139,7 @@ def _place_brackets(ax, step: float, h: float) -> None:
 
 def keep_brackets(ax) -> None:
     """目盛をそろえるために縦軸を伸ばしたあと、ブラケットを描いたときと同じ見た目 (pt) で描き直す。
-    ブラケットの間隔の決め方は変えず、伸ばした分は一番上のブラケットの上の余白になる (261020 本人決定・F122)。"""
+    ブラケットの間隔の決め方は変えず、伸ばした分は一番上のブラケットの上の余白になる (261020 決定・F122)。"""
     b = getattr(ax, "_brackets", None)
     if not b:
         return
@@ -193,7 +193,7 @@ def labels_overflow(labels: list[str]) -> list[tuple[str, float]]:
 
 
 def box_panel(labels: list[str], ylabel: str):
-    """群ごとの箱ひげ＋点の枠を作る。横幅 = 1 群 8 mm × 群の数 (260921 本人決定)。
+    """群ごとの箱ひげ＋点の枠を作る。横幅 = 1 群 8 mm × 群の数 (260921 決定)。
     返り値: (fig, ax, xpos)"""
     fig, ax = fixed_axes(MM_PER_GROUP * len(labels))
     ax.set_ylabel(ylabel)
@@ -206,12 +206,12 @@ def box_panel(labels: list[str], ylabel: str):
 DOT_S = 10                     # 群の図の点の大きさ（面積）。14 と 10 を実物で比べて 10 に決定（260921）
 DOT_JITTER = 0.2               # 点の横の散らし幅（±。1 群の幅 = 1）。乱数の種は JITTER_SEED で固定
 MEAN_HALF = 0.25               # 平均の横線の半分の長さ（1 群の幅の約半分 = ±0.25）
-MEAN_LW = 0.8                  # 平均の横線の太さ (pt)。エラーバー・軸と同じ 0.8 pt（260921 本人決定。1.2 と比較）
+MEAN_LW = 0.8                  # 平均の横線の太さ (pt)。エラーバー・軸と同じ 0.8 pt（260921 決定。1.2 と比較）
 
 
 def dots_mean_sd(ax, data: list, colors: list[str], hollow: list | None = None) -> list[tuple[float, float]]:
     """群ごとの点 (群色・ランダムに横へ散らす・種は固定)＋平均の横線＋SD のエラーバー (前景色・キャップあり)。
-    16S パイプラインの箱ひげ図をこの形に置き換えた (260921 本人指示。n = 3 の実験が多いため)。
+    16S パイプラインの箱ひげ図をこの形に置き換えた (260921 指示。n = 3 の実験が多いため)。
     hollow[i] が True の点は白抜き (中を白・外枠は群色)。返り値: 群ごとの (平均, SD)。"""
     rng = np.random.default_rng(JITTER_SEED)
     labels = getattr(ax, "_group_labels", None)
@@ -242,8 +242,8 @@ def dots_mean_sd(ax, data: list, colors: list[str], hollow: list | None = None) 
 
 # ---------------- サブグループの記号（メタボローム lib/plots.py と同じ規則） ----------------
 SUBGROUP_MARKERS = ["o", "s", "^", "D", "v", "P", "X", "*", "<", ">", "h"]
-OPEN_LW = 0.6                  # 白抜きの記号の外枠の太さ (pt)。260921 本人決定（0.9/0.6/0.4/0.3 と白塗りの有無を実物で比較）
-OPEN_FACE = "white"            # 白抜きの中身を白で塗る（重なっても下の線が透けず、白抜きと分かる。260921 本人決定）
+OPEN_LW = 0.6                  # 白抜きの記号の外枠の太さ (pt)。260921 決定（0.9/0.6/0.4/0.3 と白塗りの有無を実物で比較）
+OPEN_FACE = "white"            # 白抜きの中身を白で塗る（重なっても下の線が透けず、白抜きと分かる。260921 決定）
 
 
 def subgroup_markers(subgroups: dict) -> dict:
@@ -270,7 +270,7 @@ def scatter_subgroup(ax, x, y, color, spec: dict, marker: str, s: float = 14, **
 
 
 def save_legend(path, G, markers: dict | None = None, present_subs: list | None = None, log=None) -> None:
-    """凡例を別ファイルに出す (260921 本人決定。規約「同一凡例は 1 つに集約」)。
+    """凡例を別ファイルに出す (260921 決定。規約「同一凡例は 1 つに集約」)。
     群 (色)だけの版と、群＋サブグループ (記号)の版を作れる。"""
     from matplotlib.lines import Line2D
     if G.color_by_subgroup:                         # サブグループごとに色を付けるとき（use_subgroup: true・show_group_subgroup: false）
@@ -288,7 +288,7 @@ def save_legend(path, G, markers: dict | None = None, present_subs: list | None 
             h_s.append(Line2D([], [], ls="", marker=markers[x], color="#666666", label=x,
                               ms=5 * float(spec.get("scale", 1.0)) ** 0.5, **style))
         rows.append(("Subgroup" + (f"\n({G.open_note})" if G.open_note else ""), h_s))
-    # 高さは他の図と同じ（下 20 + 軸 48 + 上 13 = 81 mm。Keynote でグリッドにそろえるため。260921 本人指示）。
+    # 高さは他の図と同じ（下 20 + 軸 48 + 上 13 = 81 mm。Keynote でグリッドにそろえるため。260921 指示）。
     # 横幅は中身を実測して決める。上端は軸の上端（上余白 5 mm）にそろえ、Group と Subgroup のあいだは 1 行ぶん空ける。
     fig_h = MARGIN_B + PLOT_H_MM + MARGIN_T
     line_mm = FS_LEGEND / 72 * 25.4 * 1.2
@@ -304,8 +304,8 @@ def save_legend(path, G, markers: dict | None = None, present_subs: list | None 
             right_mm = max(right_mm, 2 + bb.width / fig.dpi * 25.4)
         return right_mm, y_mm - line_mm
 
-    # 高さに収まらないときは列を増やす（高さ 81 mm は変えず、横に広げる。260925 本人決定・案 B）
-    for ncol in range(1, max(len(h) for _, h in rows) + 1):   # 列数に上限は設けない（群が多いほど横に伸びる。260925 本人指示）
+    # 高さに収まらないときは列を増やす（高さ 81 mm は変えず、横に広げる。260925 決定・案 B）
+    for ncol in range(1, max(len(h) for _, h in rows) + 1):   # 列数に上限は設けない（群が多いほど横に伸びる。260925 指示）
         fig = plt.figure(figsize=(400 * MM, fig_h * MM))
         legends = []
         for title, handles in rows:
@@ -324,7 +324,7 @@ def save_legend(path, G, markers: dict | None = None, present_subs: list | None 
     if bottom_mm > fig_h - 2:
         msg = (f"  [注意] 凡例が高さ {fig_h:.0f} mm に収まっていない可能性があります: {Path(path).name}"
                f" (必要な高さ 約 {bottom_mm + 2:.0f} mm)")
-        (log or print)(msg)                       # ログと注記の一覧に残す (261021 本人決定・F3。以前は print だけ。見切れの恐れなので [注意])
+        (log or print)(msg)                       # ログと注記の一覧に残す (261021 決定・F3。以前は print だけ。見切れの恐れなので [注意])
     fig.savefig(path)
     plt.close(fig)
 
@@ -333,8 +333,8 @@ def save_legend(path, G, markers: dict | None = None, present_subs: list | None 
 SCATTER_AX_MM = PLOT_H_MM      # 軸は 48 × 48 mm（軸高と同じ。交差形式の 1 マスも同じ）
 SCATTER_S = 14                 # 点の大きさ（面積）
 ORIGIN_LINE = dict(color="#DDDDDD", lw=0.5, zorder=0)
-ELLIPSE_LEVEL = 0.95           # 群ごとの 95% データ楕円（χ² 近似・半径一定。261009 D8 本人決定 b）
-TITLE_FS = 9                   # 上余白に書く「何の指標か」のタイトル（260921 本人指定: 9 pt）
+ELLIPSE_LEVEL = 0.95           # 群ごとの 95% データ楕円（χ² 近似・半径一定。261009 D8 決定 b）
+TITLE_FS = 9                   # 上余白に書く「何の指標か」のタイトル（260921 指定: 9 pt）
 
 
 def data_ellipse(x, y, level: float = ELLIPSE_LEVEL):
@@ -373,7 +373,7 @@ def symmetric_ticks(lim: float, inner: float = 0.8) -> list[float]:
 
 
 def wrap_title(name: str, width_mm: float, fs: float = TITLE_FS) -> str:
-    """タイトルを軸の幅に収まるよう折り返す (260923 本人決定)。
+    """タイトルを軸の幅に収まるよう折り返す (260923 決定)。
     切れ目は `;` の直後と、1 つだけの `_` の直後 (`__` = 空の階級の印は割らない。261021・F4)。収まらない長い語は文字の途中でも切る。"""
     import re
     lines, cur = [], ""
@@ -397,7 +397,7 @@ def wrap_title(name: str, width_mm: float, fs: float = TITLE_FS) -> str:
     return "\n".join(lines)
 
 
-# 値の軸は目盛 5 個（4 等分）にそろえ、刻みは下の候補から「収まる一番小さいもの」を選ぶ（260924 本人決定・全図共通）。
+# 値の軸は目盛 5 個（4 等分）にそろえ、刻みは下の候補から「収まる一番小さいもの」を選ぶ（260924 決定・全図共通）。
 # 候補を 1/2/2.5/5 系に限ると上端の無駄が平均 39%（16S #10 の上位 60 タクソンで実測）。広げると 18% に下がる
 TICK_N = 4
 TICK_CAND = (1, 1.5, 2, 2.5, 3, 4, 5, 7.5)
@@ -429,11 +429,11 @@ def fixed_ticks(ax, lo: float, hi: float, axis: str = "y") -> tuple[float, float
     return lo, top
 
 
-VIRIDIS_TOP = 0.95     # 連続の色は viridis の 0〜95% を使う（一番明るい黄色は使わない。全図共通・261009 本人決定）
+VIRIDIS_TOP = 0.95     # 連続の色は viridis の 0〜95% を使う（一番明るい黄色は使わない。全図共通・261009 決定）
 
 
 def viridis():
-    """全図共通の連続の色: viridis の 0〜VIRIDIS_TOP。マスの中の文字は白 (261009 本人決定)。"""
+    """全図共通の連続の色: viridis の 0〜VIRIDIS_TOP。マスの中の文字は白 (261009 決定)。"""
     import matplotlib.colors as mc
     import matplotlib.pyplot as plt
     return mc.LinearSegmentedColormap.from_list("viridis_095", plt.get_cmap("viridis")(np.linspace(0, VIRIDIS_TOP, 256)))

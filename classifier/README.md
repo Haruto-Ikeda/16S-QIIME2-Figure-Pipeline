@@ -67,10 +67,10 @@ e16b9bc78dafa2f344563e570bbf25ba
 ```
 
 ```bash
-cd ~/Claude/Scripts/16S/classifier/uniform && md5 -r *.qza && cat *.qza.md5
+cd <パイプラインのフォルダ>/classifier/uniform && md5 -r *.qza && cat *.qza.md5
 ```
 
-⚠️ **パイプラインは md5 照合を行わない**（260915 本人判断で廃止・config からも `md5` キーを削除）。
+⚠️ **パイプラインは md5 照合を行わない**（260915 判断で廃止・config からも `md5` キーを削除）。
 **ダウンロード直後に、この手順で人が 1 度だけ確認する。**
 
 ## DOI (論文の Methods に書く)

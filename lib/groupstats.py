@@ -4,7 +4,7 @@
 メタボローム (Scripts/figure/metabolome/lib/stats.py)と同じ規則:
   tukey   = 全ペア。Tukey HSD (scipy.stats.tukey_hsd)
   dunnett = 各群 vs 対照群。群が 3 つ以上なら Dunnett (scipy.stats.dunnett)、2 つなら Welch の t 検定
-  welch   = 群が 2 つのとき。Welch の t 検定 (等分散を仮定しない。261009 本人決定)。
+  welch   = 群が 2 つのとき。Welch の t 検定 (等分散を仮定しない。261009 決定)。
             config で群が 2 つのときは welch しか選べない (plotcfg で止める)。dunnett の 2 群は、n < 2 の群を外して
             結果的に 2 群になったときだけ起きる
 どちらも手法の中で多重比較を補正するので、BH などは重ねない。
@@ -24,7 +24,7 @@ DUNNETT_SEED = 0
 def compare(values: dict[str, np.ndarray], order: list[str], method: str, control: str | None = None,
             min_n: int = 2) -> dict:
     """返り値: {"rows": [{groupA, groupB, n_A, n_B, p, test, reason}], "skipped": [群], "test": 検定名, "min_n": min_n}
-    n < min_n の群は検定から外す (stats.min_n。必須。261009 本人決定)。外した群が関わる組も rows に残し、
+    n < min_n の群は検定から外す (stats.min_n。必須。261009 決定)。外した群が関わる組も rows に残し、
     p は NaN・test は not_tested・reason は "n < {min_n}" にする (図・CSV で「検定していない」と分かるように)。
     tukey で外した結果 2 群しか残らないときは、2 群の Tukey (= Student の t)ではなく Welch の t に切り替える (D1 とそろえる)。"""
     usable = [g for g in order if len(values.get(g, [])) >= min_n]
