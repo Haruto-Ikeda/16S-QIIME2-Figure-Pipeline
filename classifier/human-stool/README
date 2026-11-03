@@ -1,0 +1,98 @@
+SILVA QIIME 2 Classifier Reference Files
+========================================
+
+These files are pre-built classifiers for taxonomic classification of amplicon 
+sequencing data using QIIME2. They are derived from the SILVA database and 
+formatted for direct use with QIIME2 platform.
+
+
+Included Files
+--------------
+SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_species_weighted_human-stool_classifier.qza
+
+
+Creation Details
+----------------
+Source Database: SILVA (https://www.arb-silva.de/)
+SILVA Version:    144
+QIIME2 Version:   2026.7.0
+Clawback Version: 0.1.0+silva
+Parameters:
+- Region: full-length
+- Primer Set: -----
+- Taxonomic Ranks: prokaryotes
+- Propagation: rank-propagation
+- Dereplication Mode: uniq
+- Habitat: human-stool
+
+
+How to Use
+----------
+Classify your sequences
+
+qiime feature-classifier classify-sklearn \
+  --i-classifier silva-138-99-515-806-nb-classifier.qza \
+  --i-reads rep_seqs.qza \
+  --o-classification taxonomy.qza
+
+Visualize the results
+
+qiime metadata tabulate \
+  --m-input-file taxonomy.qza \
+  --o-visualization taxonomy.qzv
+
+Use taxonomy in downstream analyses
+Examples: qiime taxa barplot, qiime taxa collapse, or diversity analyses.
+
+
+QIIME2 Artifact Signature Verification
+--------------------------------------
+All QIIME2 artifacts (.qza files) in this release are cryptographically signed
+with a GPG signature to ensure authenticity and integrity.
+
+1. Import the public key:
+   gpg --import SILVA_PUBLIC_KEY.asc
+
+2. Verify the signature:
+   qiime tools signature-verify \
+    --input-path <artifact.qza> \
+    --name 'SILVA-Pipeline-Official'
+
+For more information about QIIME2 provenance and signatures, see:
+https://use.qiime2.org/en/latest/how-to-guides/sign-and-verify-artifacts.html
+
+
+Referenced Tutorials and Resources
+----------------------------------
+The pipeline was developed with the help of the following tutorials and guides:
+- RESCRIPt Tutorial - Processing, filtering, and evaluating the SILVA database
+https://forum.qiime2.org/t/processing-filtering-and-evaluating-the-silva-database-and-other-reference-sequence-data-with-rescript/15494
+- readytowear Weights Repository
+https://github.com/BenKaehler/readytowear
+
+The Primer sequences for SSU were taken here:
+- Earth Microbiome Project - 16S Illumina Amplicon Protocol
+https://earthmicrobiome.org/protocols-and-standards/16s/
+
+
+Citation
+--------
+If you use these files, please cite:
+  SILVA database: 
+  - Quast C, Pruesse E, Yilmaz P, Gerken J, Schweer T, Yarza P, Peplies J, 
+    Glöckner FO (2013) The SILVA ribosomal RNA gene database project: improved 
+    data processing and web-based tools. Opens external link in new windowNucl. 
+    Acids Res. 41 (D1): D590-D596. 
+  QIIME2:
+  - Bolyen, E., Rideout, J.R., Dillon, M.R. et al. Reproducible, interactive, 
+    scalable and extensible microbiome data science using QIIME 2. Nat 
+    Biotechnol 37, 852–857 (2019). https://doi.org/10.1038/s41587-019-0209-9
+  q2-Clawback: 
+  - Kaehler BD, Bokulich NA, McDonald D, Knight R, Caporaso JG, Huttley GA. 
+    2019. Species-level microbial sequence classification is improved by 
+    source-environment information. Nature Communications 10: 4643. 
+    https://doi.org/10.1038/s41467-019-12669-6
+  - Bokulich NA, Kaehler BD, Rideout JR, Dillon M, Bolyen E, Knight R, Huttley 
+    GA, Caporaso JG. 2018. Optimizing taxonomic classification of marker gene 
+    sequences. Microbiome 6(1): 90. doi: 
+    https://doi.org/10.1186/s40168-018-0470-z.

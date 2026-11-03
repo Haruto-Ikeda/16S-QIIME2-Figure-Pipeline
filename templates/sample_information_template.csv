@@ -1,0 +1,17 @@
+﻿Sample information,,,,
+Project No.,1,,,
+Project ,<プロジェクト名>,,,
+Date,<日付>,,,
+Name,<担当者>,,,
+,,,,
+No.,Sample_name,Group_name,Subgroup_name,Note
+1,Control:SubA_1,Control,SubA,
+2,Control:SubA_2,Control,SubA,
+3,Control:SubA_3,Control,SubA,
+4,TreatA:SubA_1,TreatA,SubA,
+5,TreatA:SubA_2,TreatA,SubA,
+6,TreatA:SubA_3,TreatA,SubA,
+7,TreatB:SubB_1,TreatB,SubB,
+8,TreatB:SubB_2,TreatB,SubB,
+9,TreatB:SubB_3,TreatB,SubB,
+10,Blank_1,Blank,Blank,MiSeq に出していない検体の例 (config の absent_ok に N0010 と書く)

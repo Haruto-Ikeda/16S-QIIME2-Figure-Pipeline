@@ -1,0 +1,116 @@
+# config.example.yaml — 16S 解析の設定の雛形 (実験フォルダの input/16S/config.yaml に写し、値だけを書き換える。コメントは残す)
+# 書き方の詳細: MANUAL.md の「4. config の書き方」。すべての項目が必須で、使わないものは none と書く
+# 実行: conda activate <QIIME 2 2026.7 の env> && python <パイプラインのフォルダ>/run_16s.py <実験フォルダ>
+
+
+# --- 並列数 ---
+# 0 = 全コア (移植先でコア数が違っても同じ config で動くよう、数を直書きしない)
+# 指定できるコマンドすべてに渡す: dada2 / core-metrics (auto に変換)。phylogeny は常に 1 (2 以上だと作り直すたびに系統樹が変わるため)
+threads: 0
+
+# --- 使うラン (1 ランでもリスト。FASTQ から解析するとき。絞り込みのときは none) ---
+# ランのフォルダは <YYMMDD>_M<ラン番号 4 桁> で、中に fastq/ (FASTQ だけ) と SampleSheet.txt を置く
+#   自分の実験が持ち主のランは input/16S/runs/ に置く。ほかの実験のランは、コピーせずそのパスを書く
+# パスはすべて ~ で始まるパスか絶対パス (相対パスは止まる)
+# FASTQ の名前は M<ラン 4 桁>P<プロジェクト 4 桁>N<通し 4 桁>_S…_L001_R1_001.fastq.gz (タグ分けは _Ssplit_)
+# 結合するランどうしで trim_left の開始位置が同じでないと、同じ菌が別の ASV に分かれ、ランの差が群の差のように見える
+runs:
+  - path: "~/experiments/X01_example/input/16S/runs/250101_M0001"
+    quality_control:              # ランごとに書く。trim_left は切ったあとの開始位置がランどうしでそろうように
+      trim_left_f: 20             #   プライマー長。27Fmod 20 bp (タグ分けのランは先頭に余分な 3 塩基があるので 23)
+      trim_left_r: 19             #   338R 19 bp (タグ分けのランは 22)
+      trunc_len_f: 280            # 品質が落ちる手前で切る長さ (ランごとに違ってよい。--stage 1 の品質の図を見て決める)
+      trunc_len_r: 210
+    exclude: none                 # このランで解析に入れない検体の ID のリスト (例 [M0001P0001N0015])。読み込みの前に外す。無ければ none
+
+# --- 絞り込み (使わないときは parent・select とも none) ---
+# 親の実験 (runs: で 01〜09 を解析した実験) の結果をそのまま使い、検体を絞って作図 (10) だけを行う
+#   値は親の解析と同じまま、一部の検体だけで図・検定を見たいときに使う。PCoA・相対存在量・ANCOM-BC2 は絞った検体で計算し直す
+#   絞り込みのときは runs・threads・sample_info・diversity・classifier・taxonomy をすべて none にする (親の実験の設定を使う)
+#   例:
+#     parent: "~/<親の実験フォルダ>"
+#     select:
+#       Group_name: all              # 使う群のリストか all
+#       Subgroup_name: [SubA]        # 使うサブグループのリストか all
+#       exclude: none                # さらに外す検体の ID のリストか none (例 [M0001P0001N0015])
+parent: none
+select: none
+
+# --- 検体情報 CSV (リスト。使う検体の載っている CSV をすべて書く) ---
+# ファイル名は <YYMMDD>_<P 番号 4 桁>_…csv。FASTQ の名前の P と、ファイル名の番号・2 行目の Project No. で CSV を選ぶ
+# ヘッダ行と列名はコードに固定 (変わったら止めて気づけるようにするため)。文字コードは UTF-8 (Excel の「CSV UTF-8」)
+# absent_ok = この CSV の検体のうち、どのランにも FASTQ が無くてよい No. (MiSeq に出していない検体。例 [N0127, N0128])
+#   それ以外で FASTQ が無い検体があれば止まる (入れ忘れに気づくため)
+sample_info:
+  - path: "~/experiments/X01_example/input/sample_information/250101_0001_Sample information document.csv"
+    absent_ok: [N0010]
+
+# --- 多様性 ---
+diversity:
+  sampling_depth_floor: 10000   # この値以上の検体のうち最小のリード数を depth に採用 (研究室の慣習は 10000)
+                                # 下回る検体は除外され、excluded_samples.tsv に記録される
+  random_seed: 0                # 07 の希薄化の乱数の種 (0 以上の整数。同じ値なら同じ結果になる)
+
+# --- 分類器 (自作しない。DL 済みを指すだけ)---
+classifier:                     # path は ~ で始まるパスか絶対パスで書く (相対パスは止まる)
+  path: "~/pipelines/16S_pipeline_1.0.2/classifier/uniform/SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_genus_uniform_classifier.qza"
+  n_jobs: 2                     # ※ threads とは別。1 つにつき分類器 1 つ分をメモリに展開する (uniform は 261 MB)
+                                #   メモリ 8 GB なら 2 から。初回のあと 09_taxonomy/classify_peak_rss_mb.txt を見て見直す
+
+taxonomy:
+  confidence: 0.7               # classify-sklearn の --p-confidence (2026.7 の既定と同値)
+  collapse_ranks: [order, family, genus]   # 階級名で指定 (番号は分類器で意味が変わる: SILVA 144 は k__ が入り 138 と 1 つずれる)
+                                           # 使える名前: domain / kingdom / phylum / class / order / family / genus / species
+
+# ===== 作図 (Step 10) =====
+# 図の一覧と読み方: MANUAL.md の「6. 出力」
+# ※ 図が読む設定だけを書く
+
+# --- 群構成 ---
+grouping:
+  use_subgroup: false             # true: 群そのものを 処理×サブグループ にする (統計まで変わる。そのときは subgroups も必要)
+  show_group_subgroup: true       # true: 元の群の色＋サブグループの記号 / false: 色だけ (use_subgroup: true ならサブグループごとの色)。統計値には影響しない
+  group_order: [Control, TreatA, TreatB]     # 図の群の並び。データにある群はすべて書く (無い群・余分な群があれば停止)
+  #   false と書くと、検体の ID の順 (P → N。CSV の No. の順) で最初に出てきた順に並べる
+  group_subgroup_colors:           # 色: 全部を個別に書く (辞書) か配色名 (Tol の muted・bright・vibrant・light・high_contrast・medium_contrast・pale・dark・discrete_rainbow・smooth_rainbow) か none (色なし: 全群 #222222。#2・#4・#6 検体ごと・#7 検体ごと・#9 ベン図と凡例は描かない)。書かないとエラー。use_subgroup: true・show_group_subgroup: false ならサブグループ (「処理 サブグループ」) ごと、それ以外は群ごと
+    Control: "#228833"            # Tol dark: green
+    TreatA:  "#4477BB"            # Tol dark: blue
+    TreatB:  "#CC4466"            # Tol dark: red
+  subgroups:                      # サブグループ (Subgroup_name)。16S のメタデータの綴りで書く (空白・& は使えない)。定義順が図の順序。必須: 使わないときは none (use_subgroup・show_group_subgroup が false なら辞書を書いておいてもよい)
+    SubA: {marker: auto, open: false, scale: 1}            # 3 つとも必須。marker = 記号 (例 "o") か auto (自動) / open = 白抜きか (true / false) / scale = 大きさの倍率 (正の数)
+    SubB: {marker: auto, open: false, scale: 1}
+  subgroup_open_note: none        # 白抜きの意味 (凡例に出す)。必須: 白抜きを使わないときは none
+
+# --- 比較の基準 (#8 の星・#11 ANCOM-BC・stats.method: dunnett) ---
+comparison:
+  control_group: "Control"        # 対照群。必須: 使わないときは none (dunnett・welch・#11・#12 では none 不可)。そのときの群の名前で書く: use_subgroup: false なら群の名前 (例 "Control")、true なら「群 サブグループ」(例 "Control SubA")
+
+# --- 統計 (#1・#3・#10) ---
+stats:
+  method: "tukey"                 # tukey (全ペア) | dunnett (各群 vs 対照。そのときは comparison.control_group も必要) | welch (群が 2 つのときだけ。群が 2 つなら welch 以外はエラー)
+  min_n: 3                        # 検定に必要な最小の n (必須・2 以上)。未満の群は検定せず、図に「n < 3」と書く。#5 は並べ替えで取りうる最小の p > 0.05 の組を not testable にする。dunnett の対照群が未満ならエラー
+
+# --- 作図の中身 (#7〜#12) ---
+plotting:
+  ranks: [genus]                  # 作図する階級。taxonomy.collapse_ranks の中から選ぶ
+  top_n_bacteria: 12              # #7〜#8 に載せるタクソン数 (正の整数。24 以上は色が smooth_rainbow になり隣どうしが近い色になる)。残りは Others (12 = 12 行 × 4 mm で軸高 48 mm)
+  ancombc_top_n: 12               # #11 に載せる属の数 (正の整数か all。図全体。比較から交互に、有意 (ANCOM-BC2 の diff_robust) の中の |ln fold change| の大きい順。12 行 × 4 mm = 軸高 48 mm)
+  ancombc_summary_top_n: 12       # #12 に載せる属の数 (どれかの比較で有意 (diff_robust) の属を、対照群の平均相対存在量の多い順に。絞ると主に減少が載る)。all = 全部
+
+# --- 作図の実行 (図ごとに true / false) ---
+pipeline:
+  run:
+    read_retention:  true   # #1 最終リード数と sampling depth
+    rarefaction:     true   # #2 レアファクションカーブ
+    alpha:           true   # #3 α多様性
+    pcoa:            true   # #4 PCoA PCo1×PCo2
+    pcoa_matrix:     true   # #4 PCoA 交差形式 PCo1〜4
+    permanova:       true   # #5 PERMANOVA / PERMDISP 行列 (false なら計算も省く)
+    dendrogram:      true   # #6 デンドログラム
+    stacked_group:   true   # #7 積み上げ棒・群平均
+    stacked_sample:  true   # #7 積み上げ棒・検体ごと
+    heatmap:         true   # #8 ヒートマップ・群平均 (星は comparison.control_group があるときだけ)
+    venn:            true   # #9 ベン図 / UpSet (ベン図は 2〜5 群のときだけ)
+    taxon_barplot:   true   # #10 タクソン別の相対存在量の棒 (表の全タクソン＝1 タクソン 1 枚)
+    ancombc:         true   # #11 ANCOM-BC バブルプロット (comparison.control_group が必要)
+    ancombc_summary: true   # #12 ANCOM-BC まとめ (#11 に対照群の平均相対存在量の列を足した図。comparison.control_group が必要)
