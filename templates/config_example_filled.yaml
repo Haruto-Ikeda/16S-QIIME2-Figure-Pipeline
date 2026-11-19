@@ -53,7 +53,7 @@ diversity:
 
 # --- 分類器 (自作しない。DL 済みを指すだけ)---
 classifier:                     # path は ~ で始まるパスか絶対パスで書く (相対パスは止まる)
-  path: "~/pipelines/16S_pipeline_1.0.2/classifier/uniform/SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_genus_uniform_classifier.qza"
+  path: "~/pipelines/16S_pipeline_1.0.3/classifier/uniform/SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_genus_uniform_classifier.qza"
   n_jobs: 2                     # ※ threads とは別。1 つにつき分類器 1 つ分をメモリに展開する (uniform は 261 MB)
                                 #   メモリ 8 GB なら 2 から。初回のあと 09_taxonomy/classify_peak_rss_mb.txt を見て見直す
 
@@ -114,3 +114,6 @@ pipeline:
     taxon_barplot:   true   # #10 タクソン別の相対存在量の棒 (表の全タクソン＝1 タクソン 1 枚)
     ancombc:         true   # #11 ANCOM-BC バブルプロット (comparison.control_group が必要)
     ancombc_summary: true   # #12 ANCOM-BC まとめ (#11 に対照群の平均相対存在量の列を足した図。comparison.control_group が必要)
+
+    # 図ではない出力
+    readme:          true   # 出力の各フォルダに説明の文書 (README.md) を書く (そのフォルダの中身と図の読み方。実行のたびに書き直す)
