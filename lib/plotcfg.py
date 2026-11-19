@@ -17,10 +17,11 @@ from pathlib import Path
 import pandas as pd
 
 # 実装済みの図のスイッチ（pipeline.run のキー）。図を実装したらここに足す。
-# 14 個のスイッチ（図の番号は #1〜#12。#4 と #7 は 2 種類ずつ）がそろっていなければ停止する。
+# 図の 14 個のスイッチ（図の番号は #1〜#12。#4 と #7 は 2 種類ずつ）と、図ではない出力の readme (OTHER_SWITCHES) がそろっていなければ停止する。
 IMPLEMENTED = ["read_retention", "rarefaction", "alpha", "pcoa", "pcoa_matrix", "permanova", "dendrogram", "stacked_group", "stacked_sample", "heatmap", "venn", "taxon_barplot", "ancombc", "ancombc_summary"]
 ALL_FIGURES = ["read_retention", "rarefaction", "alpha", "pcoa", "pcoa_matrix", "permanova", "dendrogram",
                "stacked_group", "stacked_sample", "heatmap", "venn", "taxon_barplot", "ancombc", "ancombc_summary"]
+OTHER_SWITCHES = ["readme"]   # 図ではない出力のスイッチ (pipeline.run の最後に書く)。readme = 出力の各フォルダの README.md (lib/readme.py)
 METHODS = ("tukey", "dunnett", "welch")   # welch は群が 2 つのときだけ（261009 決定）
 # Tol discrete rainbow（29 色）と、色数 n = 1〜23 のときに使う番号（公式 Fig. 25。tol-colors 2.2.0 から転記・公式の 29 色と一致を確認 260924）
 TOL_DISCRETE_RAINBOW = ['#E8ECFB', '#D9CCE3', '#D1BBD7', '#CAACCB', '#BA8DB4', '#AE76A3', '#AA6F9E', '#994F88', '#882E72', '#1965B0', '#437DBF', '#5289C7', '#6195CF', '#7BAFDE', '#4EB265', '#90C987', '#CAE0AB', '#F7F056', '#F7CB45', '#F6C141', '#F4A736', '#F1932D', '#EE8026', '#E8601C', '#E65518', '#DC050C', '#A5170E', '#72190E', '#42150A']
@@ -359,18 +360,21 @@ class Groups:
 
 
 def switches(cfg: dict) -> dict[str, bool]:
-    """pipeline.run を読む。実装済みの図のキーが欠けていたら止める。
+    """pipeline.run を読む。実装済みの図のキーか readme が欠けていたら止める。
     未実装の図のキーが書かれていても読まない (ログで知らせる)。"""
     run = (cfg.get("pipeline") or {}).get("run")
     if not isinstance(run, dict):
         raise Stop("config に pipeline.run がありません")
-    unknown = [k for k in run if k not in ALL_FIGURES]
+    unknown = [k for k in run if k not in ALL_FIGURES + OTHER_SWITCHES]
     if unknown:
-        raise Stop(f"pipeline.run に知らないキーがあります: {unknown} (使える名前: {', '.join(ALL_FIGURES)})")
+        raise Stop(f"pipeline.run に知らないキーがあります: {unknown} (使える名前: {', '.join(ALL_FIGURES + OTHER_SWITCHES)})")
     missing = [k for k in IMPLEMENTED if k not in run]
     if missing:
         raise Stop(f"pipeline.run に実装済みの図のキーがありません: {missing}")
-    for k in IMPLEMENTED:
+    if "readme" not in run:                              # 1.0.2 までの config には無い行 (ほかの設定と同じく必須)
+        raise Stop("pipeline.run に readme がありません。pipeline.run の最後に次の 1 行を足してください"
+                   " (出力の各フォルダに README.md を書くかどうか): readme: true")
+    for k in IMPLEMENTED + OTHER_SWITCHES:
         if not isinstance(run[k], bool):
             raise Stop(f"pipeline.run.{k} は true / false で書いてください (現在: {run[k]!r})")
-    return {k: run[k] for k in IMPLEMENTED}
+    return {k: run[k] for k in IMPLEMENTED + OTHER_SWITCHES}

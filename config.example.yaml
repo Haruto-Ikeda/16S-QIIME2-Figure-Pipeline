@@ -114,3 +114,6 @@ pipeline:
     taxon_barplot:   true   # #10 タクソン別の相対存在量の棒 (表の全タクソン＝1 タクソン 1 枚)
     ancombc:         true   # #11 ANCOM-BC バブルプロット (comparison.control_group が必要)
     ancombc_summary: true   # #12 ANCOM-BC まとめ (#11 に対照群の平均相対存在量の列を足した図。comparison.control_group が必要)
+
+    # 図ではない出力
+    readme:          true   # 出力の各フォルダに説明の文書 (README.md) を書く (そのフォルダの中身と図の読み方。実行のたびに書き直す)

@@ -221,6 +221,16 @@ def step10_figures(ctx: dict) -> None:
             log(f"  [エラー] {e}")
             raise SystemExit(1)
     log.flush()
+    # 出力の各フォルダの README.md (図ではない出力。図を描き終えてから、あるフォルダにだけ書く。lib/readme.py)
+    if not run["readme"]:
+        log.show("README      config の pipeline.run で OFF")
+    else:
+        from . import readme as RM
+        try:
+            n_readme = len(RM.write_all(ctx, G, d))
+            log.show(f"README      出力の各フォルダに README.md ({n_readme} 個: output/16S・Qiime2・figure/{d.name} と図のフォルダ)")
+        except Exception as e:                          # README が書けなくても、描き終えた図は生かす (止めずに知らせる)
+            log(f"  [注意] README.md を書けませんでした ({type(e).__name__}: {e})。図と CSV は出力済みです")
 
 
 VERSION_KEYS = ["grouping", "comparison", "stats", "plotting", "parent", "select", "upstream"]   # 図の中身を変える設定（pipeline.run は含めない）

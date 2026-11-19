@@ -147,7 +147,7 @@ SILVA 144 SSURef NR99 の学習済み分類器 (QIIME 2 2026.7 用・full-length
 | `taxonomy` | `confidence` (0.7 のままでよい)・`collapse_ranks` (表にする階級) |
 | `grouping` | 群の並び・色・サブグループの記号 (下の注意) |
 | `comparison`・`stats` | 対照群・検定の方法 (tukey・dunnett・welch)・検定に要る最小の n |
-| `plotting`・`pipeline.run` | 図に載せる数、どの図を描くか |
+| `plotting`・`pipeline.run` | 図に載せる数、どの図を描くか。`pipeline.run` の最後の `readme` は、出力の各フォルダに説明の文書 (`README.md`) を書くかどうか |
 
 **grouping の注意**
 - `group_order` には、データにある群をすべて書きます (無い群・余分な群があると止まります)。
@@ -202,8 +202,11 @@ output/16S/
 │   ├── 03_dada2/<M>/      ランごとの DADA2 (03_merge/ = ランが 2 つ以上のときの結合)
 │   ├── 04_relabel/〜09_taxonomy/
 ├── figure/ver<N>/   図。00_info/ (凡例・設定・名前の対応表・検体情報の表) と、図の番号ごとのフォルダ (PDF と csv/)
-└── logs/            実行ごとのログ ({日時}_16S.log) と env の一覧 ({日時}_env.txt)
+├── logs/            実行ごとのログ ({日時}_16S.log) と env の一覧 ({日時}_env.txt)
+└── README.md        このフォルダの説明 (Qiime2/・figure/ver<N>/・図の番号ごとのフォルダにも 1 つずつ)
 ```
+
+**README.md**: 出力の各フォルダに、そのフォルダの中身と図の読み方を書いた `README.md` ができます (config の `pipeline.run` の `readme: true`)。この手引きを読んでいない人に結果を渡すときは、フォルダごと渡せば読み方が伝わります。実行のたびに書き直すので、メモは別の名前のファイルに書いてください。`readme: false` にすると書きません (前の実行の README は残ります)。
 
 **図の版 (`ver<N>`)**: 図の設定 (grouping・comparison・stats・plotting・絞り込み) か、上流の条件が前と違えば新しい版のフォルダができます。同じなら同じ版に描き足します (図のフォルダがある番号は飛ばします)。描き直したい図は、そのフォルダをゴミ箱へ移してから実行します。
 
