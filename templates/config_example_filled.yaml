@@ -53,7 +53,7 @@ diversity:
 
 # --- 分類器 (自作しない。DL 済みを指すだけ)---
 classifier:                     # path は ~ で始まるパスか絶対パスで書く (相対パスは止まる)
-  path: "~/pipelines/16S_pipeline_1.1.0/classifier/uniform/SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_genus_uniform_classifier.qza"
+  path: "~/pipelines/16S_pipeline_1.2.0/classifier/uniform/SILVA_144_SSURef_NR99_full-length_prokaryotes_rank-propagation_uniq_genus_uniform_classifier.qza"
   n_jobs: 2                     # ※ threads とは別。1 つにつき分類器 1 つ分をメモリに展開する (uniform は 261 MB)
                                 #   メモリ 8 GB なら 2 から。初回のあと 09_taxonomy/classify_peak_rss_mb.txt を見て見直す
 

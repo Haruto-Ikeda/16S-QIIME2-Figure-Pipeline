@@ -334,6 +334,30 @@ def _shown_labels(G, order: list | None = None) -> list[str]:
     return [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order
 
 
+def _floor_of(ctx: dict) -> int:
+    """希薄化の下限 (config の diversity.sampling_depth_floor)。除外した検体・群に書く「< 10,000 reads」の数字。"""
+    return int(ctx["cfg"]["diversity"]["sampling_depth_floor"])
+
+
+def _empty_groups(G, grp) -> list[str]:
+    """全検体が下限未満で除外され、解析に使える検体が 1 つも残らなかった群 (config の並び順)。
+    #3・#7 群平均・#8・#10 では列を消さずに残し、その位置に「< 10,000 reads」と書く (261125 決定。それまでは列ごと消していた)。"""
+    have = set(grp)
+    return [g for g in G.order if g not in have]
+
+
+def _floor_note(ax, x: float, y: float, floor: int) -> None:
+    """除外した検体・群の位置に、縦書きで「< 10,000 reads」 (#7 検体ごとと同じ体裁。N.D. は「未検出」と読まれるため使わない。260922・261125)。"""
+    ax.text(x, y, f"< {floor:,} reads", rotation=90, rotation_mode="anchor", ha="center", va="center_baseline",
+            fontsize=PS.FS_NOTE)   # 文字の下の余白（ディセンダ）の分だけ左に寄るので、ベースラインの中央でそろえる（260922）
+
+
+def _log_empty(log, empty: list[str], floor: int) -> None:
+    """検体が残らなかった群を注記に回す ([注記] は最後の注記に集まる)。"""
+    if empty:
+        log(f"  [注記] 全検体が下限 {floor:,} リード未満のため、群を残して「< {floor:,} reads」と書きました: " + ", ".join(empty))
+
+
 def _warn_labels(log, labels: list[str]) -> None:
     """45° の群名が下余白 20 mm に収まらない可能性があれば警告する (260921 指示。図は見切れうる)。"""
     over = PS.labels_overflow(labels)
@@ -391,7 +415,8 @@ def _ylim_for(G, res: dict, data: list) -> tuple[float, float, float]:
 
 
 def _draw_significance(ax, G, res: dict, xpos: dict, data: list, lo: float, hi: float, order: list | None = None) -> float:
-    """order = data の並び (None なら G.order)。#10 は検体の残った群だけで並べるので、その並びを渡す (261019・F183・F234)。"""
+    """order = data の並び (None なら G.order)。#10 の検定は検体の残った群だけで行うので、その並びを渡す (261019・F183・F234)。
+    横位置は xpos で決まる: #10 は n = 0 の群の列を空けるので、残った群の番号 → 図の列の位置を xpos に入れて渡す (261125)。"""
     order = list(G.order) if order is None else list(order)
     idx = {g: i for i, g in enumerate(order)}
     tops = {g: (t if np.isfinite(t) else lo) for g, t in zip(order, _tops(data))}
@@ -592,20 +617,26 @@ def fig03_alpha(ctx: dict, G, d: Path, n: int, total: int) -> None:
             log(f"  [エラー] 検体数が合いません: {len(v)} ≠ 全検体 {len(G.label_by_newid)} − 除外 {len(excl)} = {expect}")
             raise SystemExit(1)
         grp = v.index.map(G.label_by_newid)
-        order = [g for g in G.order if (grp == g).any()]   # 全検体が除外された群 (n = 0)は外す。1 ≤ n < 3 は残して「n < 3」(261020 決定)
+        order = [g for g in G.order if (grp == g).any()]   # 検定に使う群。全検体が除外された群 (n = 0)は検定から外す。1 ≤ n < 3 は残して「n < 3」(261020 決定)
         data = [v[grp == g].to_numpy(float) for g in order]
-        labels = _shown_labels(G, order)          # 群名に n 数は併記しない（260917 指示・全図共通）
+        empty = _empty_groups(G, grp)             # n = 0 の群。図では列を残して「< 10,000 reads」(261125 決定)
+        shown = list(G.order)                     # 図に並べる群 (n = 0 の群も含む)
+        shown_data = [v[grp == g].to_numpy(float) for g in shown]
+        labels = _shown_labels(G, shown)          # 群名に n 数は併記しない（260917 指示・全図共通）
 
         if k == 1:
             _warn_labels(log, labels)
+            _log_empty(log, empty, _floor_of(ctx))
         fig, ax, xpos = PS.box_panel(labels, ylabel)
-        PS.dots_mean_sd(ax, data, [G.color[g] for g in order])
+        PS.dots_mean_sd(ax, shown_data, [G.color[g] for g in shown])
         res = GS.compare(dict(zip(order, data)), order, G.method, G.control, G.min_n)
-        lo, hi, step = _ylim_for(G, res, data)
+        lo, hi, step = _ylim_for(G, res, shown_data)
         ax.set_ylim(lo, hi)
-        hi = _draw_significance(ax, G, res, xpos, data, lo, hi, order)
+        hi = _draw_significance(ax, G, res, xpos, shown_data, lo, hi, shown)
         lo, hi = PS.fixed_ticks(ax, lo, hi)           # 目盛 5 個（260924 決定）
         PS.keep_brackets(ax)                         # 伸ばした軸でも、ブラケットは描いたときの見た目のまま (261020・F122)
+        for g in empty:                               # 軸の高さの中央に縦書き
+            _floor_note(ax, shown.index(g), (lo + hi) / 2, _floor_of(ctx))
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
         matplotlib.pyplot.close(fig)
 
@@ -1334,13 +1365,21 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         ra, excl, merged = _taxa_relative(ctx, rank)
         st, top = _top_taxa(ra, G, top_n)
         grp = ra.columns.map(G.label_by_newid)
-        order = [g for g in G.order if g in set(grp)]
-        gm = pd.DataFrame({g: st.loc[:, grp == g].mean(axis=1) for g in order})
+        order = list(G.order)                        # 図に並べる群。全検体が除外された群 (n = 0) も列を残す (261125 決定。それまでは外していた)
+        empty = _empty_groups(G, grp)
+        gm = pd.DataFrame({g: st.loc[:, grp == g].mean(axis=1) for g in order})   # n = 0 の群は NaN (CSV にもそのまま出す)
         colors = _taxa_colors(len(top))
+        if k == 1:
+            _log_empty(log, empty, _floor_of(ctx))
 
         W = PS.MM_PER_GROUP
         fig, ax = PS.group_axes(len(order))          # 2 群以下は 3 群の図と同じ幅 (261125)
-        _stack(ax, np.arange(len(order)), gm, BAR_FRAC, colors)
+        _stack(ax, np.arange(len(order)), gm.fillna(0), BAR_FRAC, colors)
+        for g in empty:                              # 棒の位置に枠と「< 10,000 reads」 (#7 検体ごとの除外検体と同じ。261125 決定)
+            i = order.index(g)
+            from matplotlib.patches import Rectangle
+            ax.add_patch(Rectangle((i - BAR_FRAC / 2, 0), BAR_FRAC, 100, fill=False, ec=PS.GREY, lw=0.5))
+            _floor_note(ax, i, 50, _floor_of(ctx))
         ax.set_xlim(-0.5, len(order) - 0.5)
         ax.set_ylim(0, 100)
         ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 決定）
@@ -1364,7 +1403,7 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
         cd = _csv_dir(d, name)
         n_by = pd.Series(grp).value_counts()
-        gm.T.assign(n=[int(n_by[g]) for g in order]).rename_axis("group").to_csv(cd / f"{name}.values.csv")
+        gm.T.assign(n=[int(n_by.get(g, 0)) for g in order]).rename_axis("group").to_csv(cd / f"{name}.values.csv")   # n = 0 の群は値が空欄
         log.sum(f"{rank}: 上位 {len(top)}")
         log(f"  {rank}: {len(ra)} タクソン (名前が重なって上の階級で区別した行 {merged})/ 上位 {len(top)} (群平均の合計順)の全検体平均の合計 "
             f"{st.loc[top].sum().mean():.1f}% / 除外検体 {len(excl)} は平均に入れない")
@@ -1474,9 +1513,13 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
         ra, excl, _ = _taxa_relative(ctx, rank)
         st, top = _top_taxa(ra, G, top_n)
         grp = ra.columns.map(G.label_by_newid)
-        order = [g for g in G.order if (grp == g).any()]
-        gm = pd.DataFrame({g: ra.loc[top, grp == g].mean(axis=1) for g in order}) / 100    # 割合
+        order = list(G.order)                          # 図に並べる群。全検体が除外された群 (n = 0) も列を残す (261125 決定。それまでは外していた)
+        empty = _empty_groups(G, grp)
+        tested = [g for g in order if g not in empty]  # 検定に使う群 (n = 0 の群は入れない)
+        gm = pd.DataFrame({g: ra.loc[top, grp == g].mean(axis=1) for g in order}) / 100    # 割合。n = 0 の群は NaN
         L = np.log10(gm + HEAT_PSEUDO)
+        if k == 1:
+            _log_empty(log, empty, _floor_of(ctx))
 
         W, H = PS.MM_PER_GROUP, HEAT_ROW_MM
         ax_w, ax_h = W * len(order), H * len(top)
@@ -1488,7 +1531,12 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
         fig_h = PS.MARGIN_B + ax_h + PS.MARGIN_T
         fig = matplotlib.pyplot.figure(figsize=(fig_w * PS.MM, fig_h * PS.MM))
         ax = fig.add_axes([left / fig_w, PS.MARGIN_B / fig_h, ax_w / fig_w, ax_h / fig_h])
-        ax.imshow(L.to_numpy(), cmap=cmap, norm=norm, aspect="auto", interpolation="nearest")
+        ax.imshow(np.ma.masked_invalid(L.to_numpy()), cmap=cmap, norm=norm, aspect="auto", interpolation="nearest")   # n = 0 の群の列は塗らない (0% の色と区別する)
+        for g in empty:                                # 列を枠で囲み、中に「< 10,000 reads」 (261125 決定)
+            j = order.index(g)
+            from matplotlib.patches import Rectangle
+            ax.add_patch(Rectangle((j - 0.5, -0.5), 1, len(top), fill=False, ec=PS.GREY, lw=0.5, clip_on=False))
+            _floor_note(ax, j, (len(top) - 1) / 2, _floor_of(ctx))
         ax.set_xticks([])
         ax.set_yticks(range(len(top)))
         ax.set_yticklabels(top, fontsize=PS.XLABEL_FS)
@@ -1500,12 +1548,12 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
         rows, letter_rows, res = [], [], None
         for t_i, t in enumerate(top):
-            vals = {g: ra.loc[t, grp == g].to_numpy() for g in order}
-            res = GS.compare(vals, order, G.method, control, G.min_n)
+            vals = {g: ra.loc[t, grp == g].to_numpy() for g in tested}
+            res = GS.compare(vals, tested, G.method, control, G.min_n)
             if G.method == "tukey":
                 for r in res["rows"]:
                     rows.append(dict(taxon=t, **r))
-                usable = [g for g in order if g not in res["skipped"]]
+                usable = [g for g in tested if g not in res["skipped"]]
                 lt = GS.letters(usable, res["rows"]) if len(usable) >= 2 else {}
                 letter_rows.append(dict(taxon=t, **{g: lt.get(g, "") for g in order}))
                 continue
@@ -1763,15 +1811,18 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
                  f"{name}_<タクソン>.pdf ({len(taxa)} 枚)")
         if zero:
             log(f"  [注記] {rank}: 残った検体ですべて 0 の属 {len(zero)} 個は描きませんでした (stats.csv には not_tested・全検体で 0 と書きます)")
-        _warn_labels(log, [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order)   # 階級ごとに 1 回（260925 指示）
+        empty = _empty_groups(G, grp)                    # 全検体が除外された群 (n = 0)。検定と CSV には入れないが、図では列を残して「< 10,000 reads」(261125 決定)
+        shown_order = list(G.order)                      # 図に並べる群 (n = 0 の群も含む)。order = 検体の残った群 (検定・CSV)
+        _warn_labels(log, _shown_labels(G, shown_order))   # 階級ごとに 1 回（260925 指示）
+        _log_empty(log, empty, _floor_of(ctx))
         sub = _csv_dir(d, name)                          # CSV は他の図と同じ「taxon-bar」
         pdfs = _fig_dir(d, name)                        # PDF（X01 で 1,027 枚）は 10_taxon-bar/ の直下
         rows, stat_rows, n_sig = [], [], 0
         for t in taxa:
             data = [ra.loc[t, grp == g].to_numpy(dtype=float) for g in order]
             res = GS.compare({g: v for g, v in zip(order, data)}, order, G.method, G.control, G.min_n)
-            fig, ax = PS.group_axes(len(order))       # 2 群以下は 3 群の図と同じ幅 (261125)
-            x = np.arange(len(order))
+            fig, ax = PS.group_axes(len(shown_order))   # 2 群以下は 3 群の図と同じ幅 (261125)
+            x = np.array([shown_order.index(g) for g in order])   # 検体の残った群の横位置 (n = 0 の群の列は空ける)
             means = np.array([v.mean() if len(v) else np.nan for v in data])
             sds = np.array([v.std(ddof=1) if len(v) > 1 else np.nan for v in data])   # n < 2 は SD を出さない (261020・F011・F259。#1・#3 と同じ)
             # 前後は 棒（一番後ろ）→ 点 → エラーバー（一番前）。棒は群の色を薄く、点は群の色（260924 決定・案 A）
@@ -1779,7 +1830,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
                    lw=0, zorder=1)
             rng = np.random.default_rng(PS.JITTER_SEED)
             for i, v in enumerate(data):
-                ax.scatter(i + rng.uniform(-PS.DOT_JITTER, PS.DOT_JITTER, len(v)), v, s=PS.DOT_S,
+                ax.scatter(x[i] + rng.uniform(-PS.DOT_JITTER, PS.DOT_JITTER, len(v)), v, s=PS.DOT_S,
                            color=G.color[order[i]], lw=0.3, edgecolors="white", zorder=2)
             ok = np.isfinite(sds)
             ax.errorbar(x[ok], means[ok], yerr=sds[ok], fmt="none", ecolor=PS.GREY, elinewidth=PS.MEAN_LW,
@@ -1787,17 +1838,18 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             lo, hi, _step = _ylim_for(G, res, data)
             hi = _taxon_bar_axis(ax, hi)
             ax.yaxis.set_major_formatter(matplotlib.ticker.FuncFormatter(lambda v, _: f"{v:g}"))
-            hb = _draw_significance(ax, G, res, {i: i for i in range(len(order))}, data, 0, hi, order)
+            hb = _draw_significance(ax, G, res, {i: int(x[i]) for i in range(len(order))}, data, 0, hi, order)
             if hb > hi:                                # ブラケットが入りきらなければ次の段へ上げる (261020 決定・F242/F184)
                 _taxon_bar_axis(ax, hb)
                 PS.keep_brackets(ax)                   # ブラケットは描いたときの見た目のまま (B2-3 と同じ)
-            ax.set_xlim(-0.5, len(order) - 0.5)
-            ax.set_xticks(x)
-            shown = [g.split(" ", 1)[1] for g in order] if (G.use_subgroup and G.show_subgroup) else order
-            ax.set_xticklabels(shown, rotation=PS.XLABEL_ROT, ha="right", rotation_mode="anchor",
+            for g in empty:                            # 軸の高さの中央に縦書き (枠は描かない: 上限まで達した棒に見えるため。261125 決定)
+                _floor_note(ax, shown_order.index(g), sum(ax.get_ylim()) / 2, _floor_of(ctx))
+            ax.set_xlim(-0.5, len(shown_order) - 0.5)
+            ax.set_xticks(range(len(shown_order)))
+            ax.set_xticklabels(_shown_labels(G, shown_order), rotation=PS.XLABEL_ROT, ha="right", rotation_mode="anchor",
                                fontsize=PS.XLABEL_FS)
             ax.set_ylabel("Relative abundance (%)")
-            title = PS.wrap_title(t, PS.group_title_mm(len(order)))   # 軸 + 右余白の幅で折り返す (1〜3 群は 30 mm。261125)
+            title = PS.wrap_title(t, PS.group_title_mm(len(shown_order)))   # 軸 + 右余白の幅で折り返す (1〜3 群は 30 mm。261125)
             if title.count("\n") >= TITLE_MAX_LINES:     # 上余白 13 mm に入るのは 3 行まで (261021・F4)
                 log(f"  [注意] {rank}: {t} のタイトルが {title.count(chr(10)) + 1} 行になり、上で切れている可能性があります")
             ax.set_title(title, fontsize=PS.TITLE_FS, loc="left", pad=2)
