@@ -1,4 +1,4 @@
-# ancombc2.R — #11・#12 の ANCOM-BC2 (R ANCOMBC・Dunnett 型) を計算する (261018 決定。BC2 実装手順書)
+# ancombc2.R — #11・#12 の ANCOM-BC2 (R ANCOMBC・Dunnett 型) を計算する (261018 決定。理由は README の「ANCOM-BC2 の設定を決めた理由」)
 # 使い方: Rscript ancombc2.R <作業フォルダ> <対照群のコード> <群のコード (カンマ区切り・先頭が対照群)> <乱数の種>
 # 入力: <作業フォルダ>/counts.csv (分類群 × 検体・疑似カウント前)・meta.csv (検体, grp)
 #   群名は空白などを含みうるので、Python 側で g1, g2, … のコードに置き換えて渡す

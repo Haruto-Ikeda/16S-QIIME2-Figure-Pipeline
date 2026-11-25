@@ -1831,7 +1831,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
 
 
 # ---------------- #11 ANCOM-BC バブルプロット（260924 決定・README #11） ----------------
-# 261018 決定: 計算を ANCOM-BC (scikit-bio) から ANCOM-BC2 (R ANCOMBC・Dunnett 型) へ移した (BC2 実装手順書・lib/ancombc2.R)。
+# 261018 決定: 計算を ANCOM-BC (scikit-bio) から ANCOM-BC2 (R ANCOMBC・Dunnett 型) へ移した (理由は README の「ANCOM-BC2 の設定を決めた理由」・lib/ancombc2.R)。
 # 設定は lib/ancombc2.R に固定 (pseudo 0・struc_zero TRUE / neg_lb FALSE・BH・mdFDR holm / B 1000・prv_cut 0)
 ANCOM_PRV = 0.0        # 出現率で外さない (261018 決定・既定 0.10 から変更。群の大きさが違う設計で小さい群に偏るため)
 ANCOM_SEED = 0         # mdFDR の乱数の種 (パイプラインのほかの種とそろえる。261018 決定)
