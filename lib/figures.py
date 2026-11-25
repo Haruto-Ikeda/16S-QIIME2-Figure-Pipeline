@@ -346,10 +346,17 @@ def _empty_groups(G, grp) -> list[str]:
     return [g for g in G.order if g not in have]
 
 
-def _floor_note(ax, x: float, y: float, floor: int) -> None:
-    """除外した検体・群の位置に、縦書きで「< 10,000 reads」 (#7 検体ごとと同じ体裁。N.D. は「未検出」と読まれるため使わない。260922・261125)。"""
-    ax.text(x, y, f"< {floor:,} reads", rotation=90, rotation_mode="anchor", ha="center", va="center_baseline",
-            fontsize=PS.FS_NOTE)   # 文字の下の余白（ディセンダ）の分だけ左に寄るので、ベースラインの中央でそろえる（260922）
+FLOOR_NOTE_PAD_MM = 2.0   # 「< 10,000 reads」の書き出しの位置 = 軸の下端から 2 mm 上 (261125 決定)
+
+
+def _floor_note(ax, x: float, floor: int) -> None:
+    """除外した検体・群の位置に、縦書きで「< 10,000 reads」 (N.D. は「未検出」と読まれるため使わない。260922・261125)。
+    軸の下端から FLOOR_NOTE_PAD_MM 上を書き出しにして、下から上へ書く (261125 決定。それまでは軸の高さの中央で、
+    上に引く有意差のブラケットと重なることがあった)。縦軸の範囲によらず、紙の上で同じ位置になる。"""
+    from matplotlib.transforms import offset_copy
+    tr = offset_copy(ax.get_xaxis_transform(), fig=ax.figure, y=FLOOR_NOTE_PAD_MM / 25.4 * 72, units="points")
+    ax.text(x, 0, f"< {floor:,} reads", transform=tr, rotation=90, rotation_mode="anchor", ha="left",
+            va="center_baseline", fontsize=PS.FS_NOTE)   # 文字の下の余白（ディセンダ）の分だけ左に寄るので、ベースラインの中央でそろえる（260922）
 
 
 def _log_empty(log, empty: list[str], floor: int) -> None:
@@ -635,8 +642,8 @@ def fig03_alpha(ctx: dict, G, d: Path, n: int, total: int) -> None:
         hi = _draw_significance(ax, G, res, xpos, shown_data, lo, hi, shown)
         lo, hi = PS.fixed_ticks(ax, lo, hi)           # 目盛 5 個（260924 決定）
         PS.keep_brackets(ax)                         # 伸ばした軸でも、ブラケットは描いたときの見た目のまま (261020・F122)
-        for g in empty:                               # 軸の高さの中央に縦書き
-            _floor_note(ax, shown.index(g), (lo + hi) / 2, _floor_of(ctx))
+        for g in empty:                               # 軸の下端から縦書き
+            _floor_note(ax, shown.index(g), _floor_of(ctx))
         fig.savefig(_fig_dir(d, name) / f"{name}.pdf")
         matplotlib.pyplot.close(fig)
 
@@ -1379,7 +1386,7 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
             i = order.index(g)
             from matplotlib.patches import Rectangle
             ax.add_patch(Rectangle((i - BAR_FRAC / 2, 0), BAR_FRAC, 100, fill=False, ec=PS.GREY, lw=0.5))
-            _floor_note(ax, i, 50, _floor_of(ctx))
+            _floor_note(ax, i, _floor_of(ctx))
         ax.set_xlim(-0.5, len(order) - 0.5)
         ax.set_ylim(0, 100)
         ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 決定）
@@ -1445,8 +1452,7 @@ def fig09_stacked_sample(ctx: dict, G, d: Path, n: int, total: int) -> None:
         for i, s in enumerate(samples):
             if s in excl:
                 ax.add_patch(Rectangle((i - BAR_FRAC / 2, 0), BAR_FRAC, 100, fill=False, ec=PS.GREY, lw=0.5))
-                ax.text(i, 50, f"< {floor:,} reads", rotation=90, rotation_mode="anchor", ha="center", va="center_baseline",
-                        fontsize=PS.FS_NOTE)   # 文字の下の余白（ディセンダ）の分だけ左に寄るので、ベースラインの中央でそろえる（260922）
+                _floor_note(ax, i, floor)             # 軸の下端から縦書き (群平均の図とそろえる。261125)
         ax.set_xlim(-0.5, N - 0.5)
         ax.set_ylim(0, 100)
         ax.set_yticks([0, 25, 50, 75, 100])          # 目盛 5 個（260924 決定）
@@ -1536,7 +1542,7 @@ def fig10_heatmap(ctx: dict, G, d: Path, n: int, total: int) -> None:
             j = order.index(g)
             from matplotlib.patches import Rectangle
             ax.add_patch(Rectangle((j - 0.5, -0.5), 1, len(top), fill=False, ec=PS.GREY, lw=0.5, clip_on=False))
-            _floor_note(ax, j, (len(top) - 1) / 2, _floor_of(ctx))
+            _floor_note(ax, j, _floor_of(ctx))
         ax.set_xticks([])
         ax.set_yticks(range(len(top)))
         ax.set_yticklabels(top, fontsize=PS.XLABEL_FS)
@@ -1842,8 +1848,8 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             if hb > hi:                                # ブラケットが入りきらなければ次の段へ上げる (261020 決定・F242/F184)
                 _taxon_bar_axis(ax, hb)
                 PS.keep_brackets(ax)                   # ブラケットは描いたときの見た目のまま (B2-3 と同じ)
-            for g in empty:                            # 軸の高さの中央に縦書き (枠は描かない: 上限まで達した棒に見えるため。261125 決定)
-                _floor_note(ax, shown_order.index(g), sum(ax.get_ylim()) / 2, _floor_of(ctx))
+            for g in empty:                            # 軸の下端から縦書き (枠は描かない: 上限まで達した棒に見えるため。261125 決定)
+                _floor_note(ax, shown_order.index(g), _floor_of(ctx))
             ax.set_xlim(-0.5, len(shown_order) - 0.5)
             ax.set_xticks(range(len(shown_order)))
             ax.set_xticklabels(_shown_labels(G, shown_order), rotation=PS.XLABEL_ROT, ha="right", rotation_mode="anchor",
