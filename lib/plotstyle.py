@@ -3,11 +3,13 @@
 
 設計の正本は ../README.md「作図パイプラインの設計」節。
 **コードは Scripts/figure/ と共有しない** (260917 決定・規約の例外)が、
-数値と描き方は Scripts/figure/plot_summary.py に合わせてある:
+数値と描き方は Scripts/figure/plot_summary.py に合わせてある (右余白だけは 261125 に 16S 側を先に 4 → 6 mm にした):
   固定 mm レイアウト (tight_layout / bbox_inches="tight" は使わない)・軸高 48 mm・前景 #222222・
   フォント 基準 9 / 軸ラベル 10 / 星 9・箱の幅 0.55・群色の透明度 0.55・点は前景色。
 """
 from __future__ import annotations
+
+import functools
 
 import matplotlib
 
@@ -22,10 +24,12 @@ PLOT_H_MM = 48                 # 軸高（全図共通。260923 決定: 46 → 4
 # 文字の大きさ（260921 決定・規約 Skills/figure-plotting §3）: 軸ラベル 8・目盛 8・星 9・群名 8・タイトル 9・凡例 8・カラーバー 8・注記 7・マスの中 8
 FS_TICK, FS_LABEL, FS_STAR, FS_NOTE = 8, 8, 9, 7
 FS_LEGEND, FS_CBAR, FS_CELL = 8, 8, 8     # 注記 7・カラーバー 8（260923 に 7 → 8: 軸ラベル・目盛と同じ）・行列のマスの中 8
-# 余白は全図で固定（260921 決定・規約全体）: 左 15・右 4・上 13・下 20 mm（上は 260923 に 5 → 13: #10 の長いタクソン名を 3 行まで折り返して収めるため。下は 260921 に 15 → 20）。凡例は図に入れず別ファイルに出す
-MARGIN_L, MARGIN_R, MARGIN_T, MARGIN_B = 15, 4, 13, 20
+# 余白は全図で固定（260921 決定・規約全体）: 左 15・右 6・上 13・下 20 mm（上は 260923 に 5 → 13: #10 の長いタクソン名を 3 行まで折り返して収めるため。下は 260921 に 15 → 20。
+# 右は 261125 に 4 → 6: #10 のタイトルを右余白の上まで書いて 3 行に収めるため）。凡例は図に入れず別ファイルに出す
+MARGIN_L, MARGIN_R, MARGIN_T, MARGIN_B = 15, 6, 13, 20
 # 横軸は「目盛 1 つあたりの幅」を固定（260921 決定・確定。規約 Skills/figure-plotting §3）
 MM_PER_GROUP = 8              # 群の図: 1 群 = 8 mm。群名は 45° に傾ける
+MIN_GROUP_COLS = 3            # 群の図: 群が 2 つ以下でも図の幅は 3 群と同じにする（足りない分は右余白に足す。261125 決定: 2 群の #10 でタイトルが上に切れたため）
 READS_PER_UNIT, MM_PER_UNIT = 5000, 16  # #2 の横軸: 5,000 リード = 16 mm・目盛は 5,000 刻み（260929 決定で 2,000 リード 8 mm から変更。目盛を少なくするため）
 XLABEL_ROT = 45
 XLABEL_FS = 8
@@ -51,6 +55,7 @@ def p_stars(p: float) -> str:
     return "***" if p < 0.001 else "**" if p < 0.01 else "*" if p < 0.05 else ""
 
 
+@functools.lru_cache(maxsize=None)                 # 同じ文字列を何度も測るので覚えておく (タイトルの折り返しで 1 字ずつ測るため。261125)
 def text_mm(s: str, fontsize: float) -> float:
     """文字列の幅を実測して mm で返す (ラベルの重なりを実測で避けるため)。"""
     fig = plt.figure()
@@ -165,15 +170,30 @@ def draw_control_stars(ax, xpos: dict, stars: dict, tops: dict, lo: float, hi: f
     return hi
 
 
-def fixed_axes(ax_w: float, ax_h: float = PLOT_H_MM):
-    """固定の余白 (左 15・右 4・上 13・下 20 mm)で軸を 1 つ置いた図を作る。"""
-    fig_w = MARGIN_L + ax_w + MARGIN_R
+def fixed_axes(ax_w: float, ax_h: float = PLOT_H_MM, pad_r: float = 0.0):
+    """固定の余白 (左 15・右 6・上 13・下 20 mm)で軸を 1 つ置いた図を作る。pad_r は右余白に足す幅 (群の図の幅合わせ)。"""
+    fig_w = MARGIN_L + ax_w + MARGIN_R + pad_r
     fig_h = MARGIN_B + ax_h + MARGIN_T
     fig = plt.figure(figsize=(fig_w * MM, fig_h * MM))
     ax = fig.add_axes([MARGIN_L / fig_w, MARGIN_B / fig_h, ax_w / fig_w, ax_h / fig_h])
     for sp in ("top", "right"):
         ax.spines[sp].set_visible(False)
     return fig, ax
+
+
+def group_pad_mm(n_groups: int) -> float:
+    """群の図で右余白に足す幅。群が MIN_GROUP_COLS (3) より少ないとき、足りない群の数 × 8 mm (261125 決定)。"""
+    return MM_PER_GROUP * max(0, MIN_GROUP_COLS - n_groups)
+
+
+def group_axes(n_groups: int, ax_h: float = PLOT_H_MM):
+    """群を横軸にする図の軸。軸の幅 = 1 群 8 mm × 群の数。2 群以下は右余白を足して 3 群の図と同じ幅にする。"""
+    return fixed_axes(MM_PER_GROUP * n_groups, ax_h, group_pad_mm(n_groups))
+
+
+def group_title_mm(n_groups: int) -> float:
+    """群の図でタイトルが使える幅 (軸の左端から紙の右端まで = 軸 + 右余白)。1〜3 群は 30 mm。"""
+    return MM_PER_GROUP * n_groups + MARGIN_R + group_pad_mm(n_groups)
 
 
 def rotated_label_mm(s: str, fs: float = XLABEL_FS, rot: float = XLABEL_ROT) -> float:
@@ -193,9 +213,9 @@ def labels_overflow(labels: list[str]) -> list[tuple[str, float]]:
 
 
 def box_panel(labels: list[str], ylabel: str):
-    """群ごとの箱ひげ＋点の枠を作る。横幅 = 1 群 8 mm × 群の数 (260921 決定)。
+    """群ごとの箱ひげ＋点の枠を作る。横幅 = 1 群 8 mm × 群の数 (260921 決定)。2 群以下は 3 群の図と同じ幅 (261125)。
     返り値: (fig, ax, xpos)"""
-    fig, ax = fixed_axes(MM_PER_GROUP * len(labels))
+    fig, ax = group_axes(len(labels))
     ax.set_ylabel(ylabel)
     ax._group_labels = labels            # 目盛ラベルは dots_mean_sd が点を描くときに貼る
     for sp in ("top", "right"):
@@ -372,13 +392,20 @@ def symmetric_ticks(lim: float, inner: float = 0.8) -> list[float]:
     return [i * step for i in range(-k, k + 1)]
 
 
-def wrap_title(name: str, width_mm: float, fs: float = TITLE_FS) -> str:
-    """タイトルを軸の幅に収まるよう折り返す (260923 決定)。
-    切れ目は `;` の直後と、1 つだけの `_` の直後 (`__` = 空の階級の印は割らない。261021・F4)。収まらない長い語は文字の途中でも切る。"""
-    import re
-    lines, cur = [], ""
-    for part in re.split(r"(?<=;)|(?<=[^_]_)(?=[^_])", name):
+TITLE_MAX_LINES = 3            # タイトルは 3 行まで（上余白 13 mm に入る行数。260923）
+# タイトルの切れ目（261125 決定）: `;` の直後・1 つだけの `_` の直後・1 つだけの `-` の直後・`--other` の直前。`__`（空の階級の印）と `--` は割らない（261021・F4）
+TITLE_BREAKS = r"(?<=;)|(?<=[^_]_)(?=[^_])|(?<=[^-]-)(?=[^-])|(?<=[^-])(?=--other)"
+
+
+def _fill_lines(parts: list[str], width_mm: float, fs: float, join: bool) -> tuple[list[str], bool]:
+    """語 (parts) を幅に収まるよう行に詰める。幅に入らない語は文字の途中で切る。
+    join=True のときは、入らない語を前の行の続きから詰める (短い行を残さない)。返り値: (行, 語の途中で切ったか)"""
+    lines, cur, cut = [], "", False
+    for part in parts:
+        if join and cur and text_mm(part, fs) > width_mm:
+            part, cur = cur + part, ""
         while text_mm(part, fs) > width_mm:            # 切れ目の無い長い語は文字の途中で切る
+            cut = True
             k = len(part)
             while k > 1 and text_mm(part[:k], fs) > width_mm:
                 k -= 1
@@ -394,6 +421,25 @@ def wrap_title(name: str, width_mm: float, fs: float = TITLE_FS) -> str:
             cur += part
     if cur:
         lines.append(cur)
+    return lines, cut
+
+
+def wrap_title(name: str, width_mm: float, fs: float = TITLE_FS, max_lines: int = TITLE_MAX_LINES) -> str:
+    """タイトルを幅 (群の図では軸 + 右余白 = group_title_mm) に収まるよう折り返す (260923 決定・261125 に手順を変更)。
+    1. 切れ目 (TITLE_BREAKS) だけで max_lines 行に入れば、それを使う (語の途中では切らない)。
+    2. 入らなければ、幅に入らない語だけを文字の途中で切り、前の行の続きから詰める。
+    3. それでも入らなければ、切れ目を使わず幅いっぱいまで詰める。
+    最後に、`__` だけの行ができたら前の行の末尾の `;` を連れてくる (`X; / __` → `X / ;__`。`__` だけの行は軸の目盛に見えるため)。"""
+    import re
+    parts = [p for p in re.split(TITLE_BREAKS, name) if p]
+    lines, cut = _fill_lines(parts, width_mm, fs, join=False)
+    if cut or len(lines) > max_lines:
+        lines, _ = _fill_lines(parts, width_mm, fs, join=True)
+        if len(lines) > max_lines:
+            lines, _ = _fill_lines([name], width_mm, fs, join=False)
+    for i in range(1, len(lines)):
+        if set(lines[i]) <= set("_;") and lines[i - 1].endswith(";") and len(lines[i - 1]) > 1:
+            lines[i - 1], lines[i] = lines[i - 1][:-1], ";" + lines[i]
     return "\n".join(lines)
 
 

@@ -1058,7 +1058,7 @@ def fig07_dendrogram_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         N = len(leaves)
 
         ax_w = N * PS.MM_PER_GROUP
-        fig_w = PS.MARGIN_L + ax_w + PS.MARGIN_R
+        fig_w = PS.MARGIN_L + ax_w + PS.MARGIN_R + PS.group_pad_mm(N)   # 2 群以下は 3 群の図と同じ幅 (261125)
         fig_h = PS.MARGIN_B + PS.PLOT_H_MM + PS.MARGIN_T
         fig = matplotlib.pyplot.figure(figsize=(fig_w * PS.MM, fig_h * PS.MM))
         ax = fig.add_axes([PS.MARGIN_L / fig_w, PS.MARGIN_B / fig_h, ax_w / fig_w, PS.PLOT_H_MM / fig_h])
@@ -1111,7 +1111,7 @@ def fig07_dendrogram_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
 # （261016 決定・E6b。それまでは 20 色用の組の先頭 N 色で、N = 12 では暗い赤が続き下の層が見分けにくかった。点検 F123・F279）。
 # discrete rainbow は 23 色までなので、24 以上は smooth_rainbow から等間隔に取る（261021 決定・案 ア。隣どうしの色は近くなる）
 TAXA_MAX = 23
-TITLE_MAX_LINES = 3     # #10 のタイトルは 3 行まで (上余白 13 mm。260923)
+TITLE_MAX_LINES = PS.TITLE_MAX_LINES     # #10 のタイトルは 3 行まで (上余白 13 mm。260923。値の正本は plotstyle)
 
 
 def _taxa_colors(n: int) -> list[str]:
@@ -1339,7 +1339,7 @@ def fig08_stacked_group(ctx: dict, G, d: Path, n: int, total: int) -> None:
         colors = _taxa_colors(len(top))
 
         W = PS.MM_PER_GROUP
-        fig, ax = PS.fixed_axes(W * len(order))
+        fig, ax = PS.group_axes(len(order))          # 2 群以下は 3 群の図と同じ幅 (261125)
         _stack(ax, np.arange(len(order)), gm, BAR_FRAC, colors)
         ax.set_xlim(-0.5, len(order) - 0.5)
         ax.set_ylim(0, 100)
@@ -1770,7 +1770,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
         for t in taxa:
             data = [ra.loc[t, grp == g].to_numpy(dtype=float) for g in order]
             res = GS.compare({g: v for g, v in zip(order, data)}, order, G.method, G.control, G.min_n)
-            fig, ax = PS.fixed_axes(PS.MM_PER_GROUP * len(order))
+            fig, ax = PS.group_axes(len(order))       # 2 群以下は 3 群の図と同じ幅 (261125)
             x = np.arange(len(order))
             means = np.array([v.mean() if len(v) else np.nan for v in data])
             sds = np.array([v.std(ddof=1) if len(v) > 1 else np.nan for v in data])   # n < 2 は SD を出さない (261020・F011・F259。#1・#3 と同じ)
@@ -1797,7 +1797,7 @@ def fig12_taxon_bar(ctx: dict, G, d: Path, n: int, total: int) -> None:
             ax.set_xticklabels(shown, rotation=PS.XLABEL_ROT, ha="right", rotation_mode="anchor",
                                fontsize=PS.XLABEL_FS)
             ax.set_ylabel("Relative abundance (%)")
-            title = PS.wrap_title(t, PS.MM_PER_GROUP * len(order))
+            title = PS.wrap_title(t, PS.group_title_mm(len(order)))   # 軸 + 右余白の幅で折り返す (1〜3 群は 30 mm。261125)
             if title.count("\n") >= TITLE_MAX_LINES:     # 上余白 13 mm に入るのは 3 行まで (261021・F4)
                 log(f"  [注意] {rank}: {t} のタイトルが {title.count(chr(10)) + 1} 行になり、上で切れている可能性があります")
             ax.set_title(title, fontsize=PS.TITLE_FS, loc="left", pad=2)
